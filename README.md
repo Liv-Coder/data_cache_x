@@ -1,39 +1,30 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# DataCacheX
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages).
-
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages).
--->
-
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+DataCacheX is a Dart package designed to simplify offline data caching and synchronization for Flutter applications. It provides a robust solution for caching API data and other resources, with automatic synchronization when the app reconnects to the internet.
 
 ## Features
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+- **Basic API Data Caching**: Cache API responses for offline access.
+- **Persistent Storage**: Use SQLite for persistent data storage.
+- **Configurable Caching Strategies**: Time-based, version-based, and more.
+- **Automatic Background Sync**: Sync data automatically when online.
+- **Support for JSON, Images, and Files**: Cache various data types.
+- **Conflict Resolution**: Basic and advanced strategies.
+- **Encryption**: Secure sensitive data in the cache.
+- **Performance Analytics**: Monitor cache performance and usage.
 
-## Getting started
+## Getting Started
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+### Prerequisites
 
-## Usage
+- Dart SDK
+- Flutter SDK
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
+### Installation
 
-```dart
-const like = 'sample';
+Add the following dependency to your `pubspec.yaml` file:
+
+```yaml
+dependencies:
+  data_cache_x: ^0.1.0
 ```
-
-## Additional information
-
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
