@@ -12,3 +12,7 @@ class CacheEntryNotFoundException extends CacheException {
 class CacheEntryExpiredException extends CacheException {
   CacheEntryExpiredException(super.message);
 }
+
+class OfflineDataNotFoundException extends CacheException {
+  OfflineDataNotFoundException(super.message);
+}

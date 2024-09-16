@@ -1,3 +1,5 @@
+// lib/src/network/network_info.dart
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 class NetworkInfo {
@@ -6,7 +8,12 @@ class NetworkInfo {
   NetworkInfo(this._connectivity);
 
   Future<bool> get isConnected async {
-    final result = await _connectivity.checkConnectivity();
-    return result != ConnectivityResult.none;
+    final List<ConnectivityResult> result =
+        await _connectivity.checkConnectivity();
+    return result.contains(ConnectivityResult.wifi) ||
+        result.contains(ConnectivityResult.mobile);
   }
+
+  Stream<List<ConnectivityResult>> get onConnectivityChanged =>
+      _connectivity.onConnectivityChanged;
 }
