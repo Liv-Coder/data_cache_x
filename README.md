@@ -107,15 +107,3 @@ class MyApp extends StatelessWidget {
   }
 }
 ```
-
-## Contributing
-
-Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Contact
-
-For any inquiries, please reach out to [your_email@example.com](mailto:your_email@example.com).
