@@ -32,7 +32,7 @@ flutter pub get
 ### Import the Package
 
 ```dart
-import 'package:your_package_name/your_package_name.dart';
+import 'package:data_cache_x/data_cache_x.dart';
 ```
 
 ### Initialize the Cache Manager
