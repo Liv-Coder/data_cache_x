@@ -1,4 +1,4 @@
-import '../data source/local_data_source.dart';
+import '../data source/local/local_data_source.dart';
 import '../models/cache_model.dart';
 
 class CacheRepository {
@@ -8,14 +8,18 @@ class CacheRepository {
 
   Future<void> cacheData(String key, String data) async {
     final cacheModel = CacheModel(key: key, data: data);
-    await localDataSource.cacheData(cacheModel);
+    await localDataSource.insertCache(cacheModel.key, cacheModel.data);
   }
 
   Future<String?> getCachedData(String key) async {
-    return await localDataSource.getCachedData(key);
+    return await localDataSource.getCache(key);
   }
 
   Future<void> clearCache(String key) async {
-    await localDataSource.clearCache(key);
+    await localDataSource.deleteCache(key);
+  }
+
+  Future<void> clearAllCache() async {
+    await localDataSource.clearAllCache();
   }
 }
