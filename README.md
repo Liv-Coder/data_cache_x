@@ -42,18 +42,22 @@ final cacheManager = CacheManager(CacheRepository(LocalDataSource()));
 
 To cache data, use the `cacheData` method:
 
+```dart
 await cacheManager.cacheData('your_key', 'your_data');
+```
 
 ### Retrieving Cached Data
 
 To retrieve cached data, use the `getCachedData` method:
 
+```dart
 String? cachedData = await cacheManager.getCachedData('your_key');
 if (cachedData != null) {
 print('Cached Data: $cachedData');
 } else {
 print('No data found for the given key.');
 }
+```
 
 ### Clearing Cached Data
 
