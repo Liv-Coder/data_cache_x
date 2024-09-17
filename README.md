@@ -78,7 +78,7 @@ Here’s a simple example of how to use the package in a Flutter application:
 
 ```dart
 import 'package:flutter/material.dart';
-import 'package:your_package_name/your_package_name.dart';
+import 'package:data_cache_x/data_cache_x.dart';
 
 void main() {
   runApp(MyApp());
