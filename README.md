@@ -16,80 +16,66 @@ A Flutter package for efficient API caching, built with Clean Architecture princ
 
 Add the following dependency to your `pubspec.yaml` file:
 
-```yaml
+yaml
 dependencies:
-  your_package_name: ^1.0.0
-```
+data_cache_x: ^0.1.0
 
-````
+`
 
 Then run:
 
-```bash
 flutter pub get
-```
 
 ## Usage
 
 ### Import the Package
 
-```dart
 import 'package:your_package_name/your_package_name.dart';
-```
 
 ### Initialize the Cache Manager
 
 Create an instance of the `CacheManager`:
 
-```dart
 final cacheManager = CacheManager(CacheRepository(LocalDataSource()));
-```
 
 ### Caching Data
 
 To cache data, use the `cacheData` method:
 
-```dart
 await cacheManager.cacheData('your_key', 'your_data');
-```
 
 ### Retrieving Cached Data
 
 To retrieve cached data, use the `getCachedData` method:
 
-```dart
 String? cachedData = await cacheManager.getCachedData('your_key');
 if (cachedData != null) {
-  print('Cached Data: $cachedData');
+print('Cached Data: $cachedData');
 } else {
-  print('No data found for the given key.');
+print('No data found for the given key.');
 }
-```
 
 ### Clearing Cached Data
 
 To clear cached data, use the `clearCache` method:
 
-```dart
 await cacheManager.clearCache('your_key');
-```
 
 ## Example
 
 Here’s a simple example of how to use the package in a Flutter application:
 
-```dart
 import 'package:flutter/material.dart';
 import 'package:your_package_name/your_package_name.dart';
 
 void main() {
-  runApp(MyApp());
+runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final cacheManager = CacheManager(CacheRepository(LocalDataSource()));
+@override
+Widget build(BuildContext context) {
+final cacheManager = CacheManager(CacheRepository(LocalDataSource()));
 
     return MaterialApp(
       home: Scaffold(
@@ -106,9 +92,9 @@ class MyApp extends StatelessWidget {
         ),
       ),
     );
-  }
+
 }
-```
+}
 
 ## Contributing
 
@@ -123,18 +109,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 For any inquiries, please reach out to [your_email@example.com](mailto:your_email@example.com).
 
 ---
-
-### Customization
-
-- Replace `your_package_name` with the actual name of your package.
-- Update the version number in the installation section as needed.
-- Customize the example and usage sections based on the actual implementation of your package.
-- Add any additional sections that may be relevant, such as a changelog or FAQ.
-
-This `README.md` provides a clear overview of your package, its features, and how to use it, making it easier for developers to understand and integrate it into their projects.
-
-```
-
-Make sure to replace `your_package_name` with the actual name of your package before using it.
-```
-````
