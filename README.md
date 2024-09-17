@@ -1,6 +1,6 @@
 # DataCacheX
 
-[![pub package](https://img.shields.io/pub/v/your_package_name.svg)](https://pub.dev/packages/your_package_name)
+[![pub package](https://img.shields.io/pub/v/your_package_name.svg)](https://pub.dev/packages/data_cache_x)
 
 A Flutter package for efficient API caching, built with Clean Architecture principles. This package provides a simple and robust way to cache API responses locally, improving the performance and user experience of your Flutter applications.
 
@@ -18,7 +18,7 @@ Add the following dependency to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  your_package_name: ^1.0.0
+  data_cache_x: ^0.1.0
 ```
 
 Then run:
