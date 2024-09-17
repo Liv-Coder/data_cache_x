@@ -20,8 +20,6 @@ yaml
 dependencies:
 data_cache_x: ^0.1.0
 
-`
-
 Then run:
 
 flutter pub get
@@ -36,7 +34,9 @@ import 'package:your_package_name/your_package_name.dart';
 
 Create an instance of the `CacheManager`:
 
+```dart
 final cacheManager = CacheManager(CacheRepository(LocalDataSource()));
+```
 
 ### Caching Data
 
