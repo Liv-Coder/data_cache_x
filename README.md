@@ -16,18 +16,21 @@ A Flutter package for efficient API caching, built with Clean Architecture princ
 
 Add the following dependency to your `pubspec.yaml` file:
 
-yaml
+```yaml
 dependencies:
-data_cache_x: ^0.1.0
+  your_package_name: ^1.0.0
+```
 
 Then run:
-```dart
+
+```bash
 flutter pub get
 ```
 
 ## Usage
 
 ### Import the Package
+
 ```dart
 import 'package:your_package_name/your_package_name.dart';
 ```
@@ -55,9 +58,9 @@ To retrieve cached data, use the `getCachedData` method:
 ```dart
 String? cachedData = await cacheManager.getCachedData('your_key');
 if (cachedData != null) {
-print('Cached Data: $cachedData');
+  print('Cached Data: $cachedData');
 } else {
-print('No data found for the given key.');
+  print('No data found for the given key.');
 }
 ```
 
@@ -65,23 +68,26 @@ print('No data found for the given key.');
 
 To clear cached data, use the `clearCache` method:
 
+```dart
 await cacheManager.clearCache('your_key');
+```
 
 ## Example
 
 Here’s a simple example of how to use the package in a Flutter application:
 
+```dart
 import 'package:flutter/material.dart';
 import 'package:your_package_name/your_package_name.dart';
 
 void main() {
-runApp(MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-@override
-Widget build(BuildContext context) {
-final cacheManager = CacheManager(CacheRepository(LocalDataSource()));
+  @override
+  Widget build(BuildContext context) {
+    final cacheManager = CacheManager(CacheRepository(LocalDataSource()));
 
     return MaterialApp(
       home: Scaffold(
@@ -98,9 +104,9 @@ final cacheManager = CacheManager(CacheRepository(LocalDataSource()));
         ),
       ),
     );
-
+  }
 }
-}
+```
 
 ## Contributing
 
@@ -113,5 +119,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Contact
 
 For any inquiries, please reach out to [your_email@example.com](mailto:your_email@example.com).
-
----
