@@ -1,30 +1,140 @@
 # DataCacheX
 
-DataCacheX is a Dart package designed to simplify offline data caching and synchronization for Flutter applications. It provides a robust solution for caching API data and other resources, with automatic synchronization when the app reconnects to the internet.
+[![pub package](https://img.shields.io/pub/v/your_package_name.svg)](https://pub.dev/packages/your_package_name)
+
+A Flutter package for efficient API caching, built with Clean Architecture principles. This package provides a simple and robust way to cache API responses locally, improving the performance and user experience of your Flutter applications.
 
 ## Features
 
-- **Basic API Data Caching**: Cache API responses for offline access.
-- **Persistent Storage**: Use SQLite for persistent data storage.
-- **Configurable Caching Strategies**: Time-based, version-based, and more.
-- **Automatic Background Sync**: Sync data automatically when online.
-- **Support for JSON, Images, and Files**: Cache various data types.
-- **Conflict Resolution**: Basic and advanced strategies.
-- **Encryption**: Secure sensitive data in the cache.
-- **Performance Analytics**: Monitor cache performance and usage.
+- **Local Caching**: Store API responses locally using `SharedPreferences` for quick access.
+- **Clean Architecture**: Organized code structure that separates concerns into data, domain, and presentation layers.
+- **Easy to Use**: Simple API for caching and retrieving data.
+- **Robust Error Handling**: Built-in error handling to manage caching operations.
+- **Extensible**: Easily extendable for additional features like cache expiration or different storage solutions.
 
-## Getting Started
-
-### Prerequisites
-
-- Dart SDK
-- Flutter SDK
-
-### Installation
+## Installation
 
 Add the following dependency to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  data_cache_x: ^0.1.0
+  your_package_name: ^1.0.0
 ```
+
+````
+
+Then run:
+
+```bash
+flutter pub get
+```
+
+## Usage
+
+### Import the Package
+
+```dart
+import 'package:your_package_name/your_package_name.dart';
+```
+
+### Initialize the Cache Manager
+
+Create an instance of the `CacheManager`:
+
+```dart
+final cacheManager = CacheManager(CacheRepository(LocalDataSource()));
+```
+
+### Caching Data
+
+To cache data, use the `cacheData` method:
+
+```dart
+await cacheManager.cacheData('your_key', 'your_data');
+```
+
+### Retrieving Cached Data
+
+To retrieve cached data, use the `getCachedData` method:
+
+```dart
+String? cachedData = await cacheManager.getCachedData('your_key');
+if (cachedData != null) {
+  print('Cached Data: $cachedData');
+} else {
+  print('No data found for the given key.');
+}
+```
+
+### Clearing Cached Data
+
+To clear cached data, use the `clearCache` method:
+
+```dart
+await cacheManager.clearCache('your_key');
+```
+
+## Example
+
+Here’s a simple example of how to use the package in a Flutter application:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:your_package_name/your_package_name.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final cacheManager = CacheManager(CacheRepository(LocalDataSource()));
+
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(title: Text('API Cache Example')),
+        body: Center(
+          child: ElevatedButton(
+            onPressed: () async {
+              await cacheManager.cacheData('example_key', 'Hello, World!');
+              String? data = await cacheManager.getCachedData('example_key');
+              print(data); // Output: Hello, World!
+            },
+            child: Text('Cache Data'),
+          ),
+        ),
+      ),
+    );
+  }
+}
+```
+
+## Contributing
+
+Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Contact
+
+For any inquiries, please reach out to [your_email@example.com](mailto:your_email@example.com).
+
+---
+
+### Customization
+
+- Replace `your_package_name` with the actual name of your package.
+- Update the version number in the installation section as needed.
+- Customize the example and usage sections based on the actual implementation of your package.
+- Add any additional sections that may be relevant, such as a changelog or FAQ.
+
+This `README.md` provides a clear overview of your package, its features, and how to use it, making it easier for developers to understand and integrate it into their projects.
+
+```
+
+Make sure to replace `your_package_name` with the actual name of your package before using it.
+```
+````
