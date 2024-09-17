@@ -21,14 +21,16 @@ dependencies:
 data_cache_x: ^0.1.0
 
 Then run:
-
+```dart
 flutter pub get
+```
 
 ## Usage
 
 ### Import the Package
-
+```dart
 import 'package:your_package_name/your_package_name.dart';
+```
 
 ### Initialize the Cache Manager
 
