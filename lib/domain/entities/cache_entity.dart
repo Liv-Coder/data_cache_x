@@ -1,7 +1,7 @@
 class CacheEntity {
   final String key;
   final String data;
-  final int expirationDuration;
+  final Duration expirationDuration;
 
   CacheEntity({
     required this.key,

@@ -54,7 +54,7 @@ class LocalDataSource {
         {
           'key': key,
           'data': compressedData,
-          'expirationDuration': expirationDuration,
+          'expirationDuration': expirationDuration.inMilliseconds,
           'timestamp': timestamp,
           'isCompressed': compress ? 1 : 0,
         },

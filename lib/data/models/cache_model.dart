@@ -1,7 +1,7 @@
 class CacheModel {
   final String key;
   final String data;
-  final Duration expirationDuration; // in milliseconds
+  final Duration expirationDuration;
   bool isCompressed;
 
   CacheModel({
@@ -15,7 +15,8 @@ class CacheModel {
     return {
       'key': key,
       'data': data,
-      'expirationDuration': expirationDuration,
+      'expirationDuration':
+          expirationDuration.inMilliseconds, // Convert to milliseconds
       'timestamp': DateTime.now().millisecondsSinceEpoch,
       'isCompressed': isCompressed ? 1 : 0,
     };
@@ -25,7 +26,8 @@ class CacheModel {
     return CacheModel(
       key: map['key'],
       data: map['data'],
-      expirationDuration: map['expirationDuration'],
+      expirationDuration: Duration(
+          milliseconds: map['expirationDuration']), // Convert to Duration
       isCompressed: map['isCompressed'] == 1,
     );
   }
