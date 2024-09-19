@@ -7,10 +7,10 @@ A Flutter package for efficient API caching, built with Clean Architecture princ
 ## Features
 
 - **Local Caching**: Store API responses locally using `SharedPreferences` for quick access.
-- **Clean Architecture**: Organized code structure that separates concerns into data, domain, and presentation layers.
 - **Easy to Use**: Simple API for caching and retrieving data.
 - **Robust Error Handling**: Built-in error handling to manage caching operations.
-- **Extensible**: Easily extendable for additional features like cache expiration or different storage solutions.
+- **Compression Support**: Optionally compress cached data to save space.
+- **Cache Debugging**: Print the contents of the cache for debugging purposes.
 
 ## Installation
 
@@ -18,7 +18,7 @@ Add the following dependency to your `pubspec.yaml` file:
 
 ```yaml
 dependencies:
-  data_cache_x: ^0.1.0
+  data_cache_x: ^0.1.2
 ```
 
 Then run:
@@ -48,7 +48,7 @@ final cacheManager = CacheManager(CacheRepository(LocalDataSource()));
 To cache data, use the `cacheData` method:
 
 ```dart
-await cacheManager.cacheData('your_key', 'your_data');
+await cacheManager.cacheData('your_key', 'your_data', 60000); // 1 minute expiration
 ```
 
 ### Retrieving Cached Data
@@ -70,6 +70,22 @@ To clear cached data, use the `clearCache` method:
 
 ```dart
 await cacheManager.clearCache('your_key');
+```
+
+### Clearing All Cached Data
+
+To clear all cached data, use the `clearAllCache` method:
+
+```dart
+await cacheManager.clearAllCache();
+```
+
+### Printing Cached Contents
+
+To print the contents of the cache for debugging purposes, use the `printCacheContents` method:
+
+```dart
+await cacheManager.printCacheContents();
 ```
 
 ## Example

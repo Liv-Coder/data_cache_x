@@ -18,3 +18,12 @@ class NoCachedDataFoundException extends CacheException {
   @override
   String toString() => 'NoCachedDataException: $message';
 }
+
+// Exception thrown when Handleing Json data.
+class JsonParsingException extends CacheException {
+  /// Creates a new [JsonParsingException] with the given error [message].
+  JsonParsingException({required super.message});
+
+  @override
+  String toString() => 'JsonParsingException: $message';
+}

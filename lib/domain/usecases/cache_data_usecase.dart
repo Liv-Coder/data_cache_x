@@ -5,7 +5,17 @@ class CacheDataUseCase {
 
   CacheDataUseCase(this.repository);
 
-  Future<void> call(String key, String data) async {
-    await repository.cacheData(key, data);
+  Future<void> call(
+    String key,
+    String data,
+    Duration expirationDuration,
+    bool isCompressed,
+  ) async {
+    await repository.cacheData(
+      key,
+      data,
+      expirationDuration,
+      isCompressed,
+    );
   }
 }
