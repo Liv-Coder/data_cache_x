@@ -42,7 +42,6 @@ class LocalDataSource {
   ) async {
     try {
       final db = await database;
-      int timestamp = DateTime.now().millisecondsSinceEpoch;
       List<int> compressedData;
       if (compress) {
         compressedData = gzip.encode(utf8.encode(data));
@@ -55,7 +54,7 @@ class LocalDataSource {
           'key': key,
           'data': compressedData,
           'expirationDuration': expirationDuration.inMilliseconds,
-          'timestamp': timestamp,
+          'timestamp': DateTime.now().millisecondsSinceEpoch,
           'isCompressed': compress ? 1 : 0,
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
@@ -85,13 +84,7 @@ class LocalDataSource {
           decompressedData = utf8.decode(compressedData);
         }
 
-        // Check if the decompressed data is valid JSON
-        if (_isValidJson(decompressedData)) {
-          cacheEntry['data'] = jsonDecode(decompressedData);
-        } else {
-          cacheEntry['data'] = decompressedData;
-        }
-
+        cacheEntry['data'] = decompressedData;
         cacheEntry['expirationDuration'] =
             Duration(milliseconds: cacheEntry['expirationDuration']);
         return cacheEntry;

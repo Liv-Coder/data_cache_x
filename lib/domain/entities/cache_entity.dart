@@ -1,6 +1,6 @@
 class CacheEntity {
   final String key;
-  final String data;
+  final dynamic data;
   final Duration expirationDuration;
 
   CacheEntity({

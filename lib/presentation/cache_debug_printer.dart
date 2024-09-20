@@ -50,19 +50,23 @@ class CacheDebugTablePrinter {
 
   static void _addTableRow(StringBuffer buffer, Map<String, dynamic> entry) {
     final key = entry['key'] as String;
-    final compressedData = entry['data'] as List<int>;
+    final data = entry['data'];
     final isCompressed = entry['isCompressed'] == 1;
     final expirationDuration = entry['expirationDuration'] as int;
     final timestamp = entry['timestamp'] as int;
 
-    String decompressedData;
-    if (isCompressed) {
-      decompressedData = utf8.decode(gzip.decode(compressedData));
+    String dataPreview;
+    if (data is List<int>) {
+      if (isCompressed) {
+        dataPreview = utf8.decode(gzip.decode(data));
+      } else {
+        dataPreview = utf8.decode(data);
+      }
     } else {
-      decompressedData = utf8.decode(compressedData);
+      dataPreview = data.toString();
     }
 
-    final dataPreview = _truncateString(decompressedData, _dataPreviewWidth);
+    dataPreview = _truncateString(dataPreview, _dataPreviewWidth);
     final expirationDate =
         DateTime.fromMillisecondsSinceEpoch(timestamp + expirationDuration);
     final isExpired = DateTime.now().isAfter(expirationDate);

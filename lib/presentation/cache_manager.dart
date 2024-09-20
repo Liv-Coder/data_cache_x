@@ -23,7 +23,7 @@ class CacheManager {
 
   Future<void> cacheData(
     String key,
-    String data,
+    dynamic data,
     Duration expirationDuration, {
     bool isCompressed = true,
   }) async {
@@ -35,7 +35,7 @@ class CacheManager {
     );
   }
 
-  Future<String?> getCachedData(String key) async {
+  Future<dynamic> getCachedData(String key) async {
     return await getCachedDataUseCase.call(key);
   }
 

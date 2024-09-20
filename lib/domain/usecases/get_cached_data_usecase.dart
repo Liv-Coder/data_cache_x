@@ -5,7 +5,7 @@ class GetCachedDataUseCase {
 
   GetCachedDataUseCase(this.repository);
 
-  Future<String?> call(String key) async {
+  Future<dynamic> call(String key) async {
     return await repository.getCachedData(key);
   }
 }

@@ -1,6 +1,8 @@
+import 'dart:convert';
+
 class CacheModel {
   final String key;
-  final String data;
+  final dynamic data;
   final Duration expirationDuration;
   bool isCompressed;
 
@@ -14,9 +16,8 @@ class CacheModel {
   Map<String, dynamic> toMap() {
     return {
       'key': key,
-      'data': data,
-      'expirationDuration':
-          expirationDuration.inMilliseconds, // Convert to milliseconds
+      'data': jsonEncode(data),
+      'expirationDuration': expirationDuration.inMilliseconds,
       'timestamp': DateTime.now().millisecondsSinceEpoch,
       'isCompressed': isCompressed ? 1 : 0,
     };
@@ -25,9 +26,8 @@ class CacheModel {
   factory CacheModel.fromMap(Map<String, dynamic> map) {
     return CacheModel(
       key: map['key'],
-      data: map['data'],
-      expirationDuration: Duration(
-          milliseconds: map['expirationDuration']), // Convert to Duration
+      data: jsonDecode(map['data']),
+      expirationDuration: Duration(milliseconds: map['expirationDuration']),
       isCompressed: map['isCompressed'] == 1,
     );
   }

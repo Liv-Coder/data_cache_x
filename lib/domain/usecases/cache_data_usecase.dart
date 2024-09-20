@@ -7,7 +7,7 @@ class CacheDataUseCase {
 
   Future<void> call(
     String key,
-    String data,
+    dynamic data,
     Duration expirationDuration,
     bool isCompressed,
   ) async {

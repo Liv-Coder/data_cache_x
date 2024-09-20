@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import '../data source/local/local_data_source.dart';
 import '../models/cache_model.dart';
 
@@ -8,7 +10,7 @@ class CacheRepository {
 
   Future<void> cacheData(
     String key,
-    String data,
+    dynamic data,
     Duration expirationDuration,
     bool isCompressed,
   ) async {
@@ -20,17 +22,16 @@ class CacheRepository {
     );
     await localDataSource.insertCache(
       cacheModel.key,
-      cacheModel.data,
-      cacheModel.expirationDuration,
+      jsonEncode(cacheModel.data),
+      Duration(milliseconds: cacheModel.expirationDuration.inMilliseconds),
       cacheModel.isCompressed,
     );
   }
 
-  Future<String?> getCachedData(String key) async {
+  Future<dynamic> getCachedData(String key) async {
     final cacheEntry = await localDataSource.getCache(key);
     if (cacheEntry != null) {
-      final expirationDuration =
-          Duration(milliseconds: cacheEntry['expirationDuration']);
+      final expirationDuration = cacheEntry['expirationDuration'] as Duration;
       final timestamp = cacheEntry['timestamp'] as int;
       final expirationDate = DateTime.fromMillisecondsSinceEpoch(
           timestamp + expirationDuration.inMilliseconds);
@@ -38,7 +39,7 @@ class CacheRepository {
         await localDataSource.deleteCache(key);
         return null;
       }
-      return cacheEntry['data'] as String;
+      return jsonDecode(cacheEntry['data'] as String);
     }
     return null;
   }
