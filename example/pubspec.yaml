@@ -1,0 +1,33 @@
+name: example
+description: Demonstrates how to use the data_cache_x package.
+publish_to: "none" # Remove this line if you wish to publish the package
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.2.6 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  http: ^1.2.1
+  get_it: ^7.6.7
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.2
+  data_cache_x:
+    path: ../
+  flutter_bloc: ^8.1.4
+  equatable: ^2.0.5
+  uuid: ^4.3.3
+  intl: ^0.18.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.8
+
+flutter:
+  uses-material-design: true
