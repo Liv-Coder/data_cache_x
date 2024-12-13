@@ -11,7 +11,6 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.2
   http: ^1.2.1
-  get_it: ^7.6.7
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   path_provider: ^2.1.2
@@ -21,6 +20,7 @@ dependencies:
   equatable: ^2.0.5
   uuid: ^4.3.3
   intl: ^0.18.1
+  get_it: ^8.0.2
 
 dev_dependencies:
   flutter_test:
