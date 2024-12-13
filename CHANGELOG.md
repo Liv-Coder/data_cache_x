@@ -18,3 +18,7 @@
 - Added update operation for modifying existing data
 - Improved data persistence and reliability
 - Enhanced error handling for database operations
+
+## 0.1.3+1
+
+- Included Readme.md
