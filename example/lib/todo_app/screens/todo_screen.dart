@@ -145,33 +145,6 @@ class TodoScreen extends StatelessWidget {
     );
   }
 
-  void _showDeleteConfirmationDialog(BuildContext parentContext, String id) {
-    showDialog(
-      context: parentContext,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Delete Todo'),
-          content: const Text('Are you sure you want to delete this todo?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                parentContext.read<TodoBloc>().add(DeleteTodoEvent(id));
-                Navigator.pop(context);
-              },
-              child: const Text('Delete'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   void _showOptionsBottomSheet(BuildContext parentContext, TodoItem todo) {
     // Capture the bloc reference before showing bottom sheet
     final todoBloc = parentContext.read<TodoBloc>();

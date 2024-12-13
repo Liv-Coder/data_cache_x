@@ -2,9 +2,12 @@ name: data_cache_x
 description: "A Flutter package for efficient offline data caching and synchronization."
 version: 0.1.3
 
+homepage: https://github.com/Liv-Coder
+repository: https://github.com/Liv-Coder/data_cache_x
+
 environment:
-  sdk: ">=2.17.0 <4.0.0"
-  flutter: ">=1.17.0 <4.0.0"
+  sdk: ">=2.17.0"
+  flutter: ">=1.17.0"
 
 dependencies:
   flutter:
