@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://i.postimg.cc/dQCB3rxM/fbc2d4a9-5805-4368-b160-cc9613eb0a0f.jpg" alt="data_cache_x logo" width="200"/>
+  <img src="https://i.postimg.cc/dQCB3rxM/fbc2d4a9-5805-4368-b160-cc9613eb0a0f.jpg" alt="data_cache_x logo" style="width: 100%; max-width: 100%;"/>
 </p>
 
 # data_cache_x
