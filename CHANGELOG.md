@@ -1,7 +1,20 @@
-## 0.0.1
+## 0.1.0
 
-- TODO: Describe initial release.
+- Initial release with basic functionality
+- Added simple get operation to retrieve data
+- Added save operation to store data
+- Added delete operation to remove data
+
+## 0.1.2
+
+- Implemented data expiry feature
+- Added support for setting TTL (Time To Live) on cached data
+- Added automatic cleanup of expired data
+- Added example todo app demonstrating all features
 
 ## 0.1.3
 
-- Added an example todo app demonstrating all features of data_cache_x.
+- Migrated storage backend to Hive database for better performance
+- Added update operation for modifying existing data
+- Improved data persistence and reliability
+- Enhanced error handling for database operations
