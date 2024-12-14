@@ -4,22 +4,20 @@ import 'package:data_cache_x/models/cache_item.dart';
 ///
 /// Cache adapters are responsible for storing and retrieving data from a specific storage mechanism.
 /// This abstract class provides a common interface for all cache adapters, allowing them to be used interchangeably.
-///
-/// The generic type parameter `T` represents the type of data that the cache adapter will store.
-abstract class CacheAdapter<T> {
+abstract class CacheAdapter {
   /// Stores a [value] in the cache with the given [key].
   ///
   /// The [value] is wrapped in a [CacheItem] object, which allows for optional expiry.
   ///
   /// Throws a [CacheException] if there is an error storing the data.
-  Future<void> put(String key, CacheItem<T> value);
+  Future<void> put(String key, CacheItem<dynamic> value);
 
   /// Retrieves the [CacheItem] associated with the given [key].
   ///
   /// Returns `null` if no value is found for the given [key].
   ///
   /// Throws a [CacheException] if there is an error retrieving the data.
-  Future<CacheItem<T>?> get(String key);
+  Future<CacheItem<dynamic>?> get(String key);
 
   /// Deletes the value associated with the given [key].
   ///

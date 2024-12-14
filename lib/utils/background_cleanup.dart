@@ -15,7 +15,7 @@ void callbackDispatcher() {
     if (task == cleanupTaskName) {
       try {
         // Get the HiveAdapter from the service locator (make sure setup() has been called)
-        final hiveAdapter = getIt<HiveAdapter<String>>();
+        final hiveAdapter = getIt<HiveAdapter>();
 
         // Iterate through the keys and delete expired items
         final keys = hiveAdapter.keys();

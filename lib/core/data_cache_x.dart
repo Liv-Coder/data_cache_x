@@ -9,16 +9,14 @@ import 'package:logging/logging.dart';
 /// `DataCacheX` provides methods for storing, retrieving, and deleting data.
 /// It uses a [CacheAdapter] to handle the underlying storage.
 ///
-/// The generic type parameter `T` represents the type of data that the cache will store.
-///
 /// Example:
 /// ```dart
-/// // Assuming you have a HiveAdapter instance
-/// final hiveAdapter = HiveAdapter<String>(CacheItemStringAdapter());
+/// Assuming you have a HiveAdapter instance
+/// final hiveAdapter = HiveAdapter(typeAdapterRegistry);
 /// await hiveAdapter.init();
 ///
 /// // Create a DataCacheX instance
-/// final dataCache = DataCacheX<String>(hiveAdapter);
+/// final dataCache = DataCacheX(hiveAdapter);
 ///
 /// // Store a value
 /// await dataCache.put('name', 'John Doe', expiry: Duration(seconds: 30));
@@ -33,8 +31,8 @@ import 'package:logging/logging.dart';
 /// // Clear the cache
 /// await dataCache.clear();
 /// ```
-class DataCacheX<T> {
-  final CacheAdapter<T> _cacheAdapter;
+class DataCacheX {
+  final CacheAdapter _cacheAdapter;
 
   /// Creates a new instance of [DataCacheX].
   ///
@@ -48,7 +46,7 @@ class DataCacheX<T> {
   /// The [expiry] parameter can be used to set an optional expiry time for the data.
   ///
   /// Throws a [CacheException] if there is an error storing the data.
-  Future<void> put(String key, T value, {Duration? expiry}) async {
+  Future<void> put<T>(String key, T value, {Duration? expiry}) async {
     try {
       final cacheItem = CacheItem<T>(
         value: value,
@@ -70,7 +68,7 @@ class DataCacheX<T> {
   ///
   /// Throws an [ArgumentError] if the key is empty.
   /// Throws a [CacheException] if there is an error retrieving the data.
-  Future<T?> get(String key) async {
+  Future<T?> get<T>(String key) async {
     if (key.isEmpty) {
       throw ArgumentError('Key cannot be empty');
     }
@@ -85,7 +83,7 @@ class DataCacheX<T> {
         return null;
       }
 
-      return cacheItem.value;
+      return cacheItem.value as T?;
     } on HiveError catch (e) {
       _log.severe('Failed to get data from cache (HiveError): $e');
       throw CacheException('Failed to get data from cache: ${e.message}');

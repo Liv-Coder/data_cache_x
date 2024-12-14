@@ -36,6 +36,4 @@ export 'package:data_cache_x/models/cache_item.dart';
 
 // Utils
 export 'package:data_cache_x/utils/background_cleanup.dart';
-
-// Service Locator
-export 'package:data_cache_x/service_locator.dart';
+export 'package:data_cache_x/utils/time_helper.dart';
