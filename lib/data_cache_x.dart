@@ -12,6 +12,7 @@
 /// - **Adapters**: Defines the `CacheAdapter` interface and provides concrete implementations for different storage mechanisms.
 ///   - `CacheAdapter`: An abstract class that defines the interface for cache adapters.
 ///   - `HiveAdapter`: A concrete implementation of `CacheAdapter` that uses the Hive NoSQL database for storage.
+///   - `MemoryAdapter`: A concrete implementation of `CacheAdapter` that uses an in-memory map for storage.
 /// - **Models**: Contains the `CacheItem` class, which represents a single item in the cache.
 ///   - `CacheItem`: A class that encapsulates the data to be stored in the cache, along with its optional expiry time.
 /// - **Utils**: Provides utility functions for tasks such as background cleanup.
@@ -27,6 +28,7 @@ export 'package:data_cache_x/core/exception.dart';
 // Adapters
 export 'package:data_cache_x/adapters/cache_adapter.dart';
 export 'package:data_cache_x/adapters/hive/hive_adapter.dart';
+export 'package:data_cache_x/adapters/memory_adapter.dart';
 
 // Models
 export 'package:data_cache_x/models/cache_item.dart';

@@ -1,4 +1,6 @@
+import 'package:data_cache_x/adapters/cache_adapter.dart';
 import 'package:data_cache_x/adapters/hive/hive_adapter.dart';
+import 'package:data_cache_x/adapters/memory_adapter.dart';
 import 'package:data_cache_x/core/data_cache_x.dart';
 import 'package:data_cache_x/models/cache_item.dart';
 import 'package:data_cache_x/utils/background_cleanup.dart';
@@ -46,12 +48,15 @@ class TypeAdapterRegistry {
 Future<void> setupDataCacheX({
   String? boxName,
   Duration? cleanupFrequency,
+  CacheAdapterType adapterType = CacheAdapterType.hive,
 }) async {
   // Register TypeAdapterRegistry
   getIt.registerSingleton<TypeAdapterRegistry>(TypeAdapterRegistry());
 
   // Initialize Hive
-  await Hive.initFlutter();
+  if (adapterType == CacheAdapterType.hive) {
+    await Hive.initFlutter();
+  }
 
   // Register default adapters
   final typeAdapterRegistry = getIt<TypeAdapterRegistry>();
@@ -80,15 +85,28 @@ Future<void> setupDataCacheX({
     typeId: 6,
   );
 
-  // Register HiveAdapter
-  final hiveAdapter = HiveAdapter(typeAdapterRegistry, boxName: boxName);
-  getIt.registerSingleton<HiveAdapter>(hiveAdapter);
+  // Register CacheAdapter
+  CacheAdapter cacheAdapter;
+  if (adapterType == CacheAdapterType.hive) {
+    final hiveAdapter = HiveAdapter(typeAdapterRegistry, boxName: boxName);
+    getIt.registerSingleton<HiveAdapter>(hiveAdapter);
+    cacheAdapter = hiveAdapter;
+  } else {
+    final memoryAdapter = MemoryAdapter();
+    getIt.registerSingleton<MemoryAdapter>(memoryAdapter);
+    cacheAdapter = memoryAdapter;
+  }
 
   // Register DataCacheX
-  getIt.registerSingleton<DataCacheX>(DataCacheX(hiveAdapter));
+  getIt.registerSingleton<DataCacheX>(DataCacheX(cacheAdapter));
 
   // Initialize background cleanup
   initializeBackgroundCleanup(frequency: cleanupFrequency);
+}
+
+enum CacheAdapterType {
+  hive,
+  memory,
 }
 
 class _CacheItemAdapter<T> extends TypeAdapter<CacheItem<T>> {
