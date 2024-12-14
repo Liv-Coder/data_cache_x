@@ -93,28 +93,8 @@ Future<void> setupDataCacheX({
   });
 
   typeAdapterRegistry.registerAdapter(
-    _CacheItemAdapter<String>(typeId: 1),
-    typeId: 1,
-  );
-  typeAdapterRegistry.registerAdapter(
-    _CacheItemAdapter<int>(typeId: 2),
-    typeId: 2,
-  );
-  typeAdapterRegistry.registerAdapter(
-    _CacheItemAdapter<double>(typeId: 3),
-    typeId: 3,
-  );
-  typeAdapterRegistry.registerAdapter(
-    _CacheItemAdapter<bool>(typeId: 4),
-    typeId: 4,
-  );
-  typeAdapterRegistry.registerAdapter(
-    _CacheItemAdapter<List<String>>(typeId: 5),
-    typeId: 5,
-  );
-  typeAdapterRegistry.registerAdapter(
-    _CacheItemAdapter<Map<String, dynamic>>(typeId: 6),
-    typeId: 6,
+    _CacheItemAdapter<dynamic>(typeId: 0),
+    typeId: 0,
   );
 
   // Register default serializers
