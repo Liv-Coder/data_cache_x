@@ -4,7 +4,7 @@
        style="width: 100%; height: 150; object-fit: cover;" />
 </p>
 
-# data_cache_x
+# DataCacheX
 
 A Dart package for caching data using Hive as a backend, with support for automatic background cleanup of expired items.
 
