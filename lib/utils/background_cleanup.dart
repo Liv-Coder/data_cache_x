@@ -20,7 +20,7 @@ void callbackDispatcher() {
         final hiveAdapter = getIt<HiveAdapter>();
 
         // Iterate through the keys and delete expired items
-        final keys = hiveAdapter.keys();
+        final keys = await hiveAdapter.getKeys();
         for (final key in keys) {
           final cacheItem = await hiveAdapter.get(key);
           if (cacheItem != null && cacheItem.isExpired) {

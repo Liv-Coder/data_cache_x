@@ -32,3 +32,6 @@
 - Improved error handling in `background cleanup` by logging errors.
 - Added support for `multiple cache adapters`, including an `in-memory` adapter.
 - Users can now choose between `Hive` and `in-memory storage`.
+- Implemented `sliding expiration`, resetting the `expiry time` on each access.
+- Implemented `cache invalidation` feature.
+- Added methods to `invalidate cache` entries by `key` or by a `custom condition`.

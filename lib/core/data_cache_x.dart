@@ -46,11 +46,17 @@ class DataCacheX {
   /// The [expiry] parameter can be used to set an optional expiry time for the data.
   ///
   /// Throws a [CacheException] if there is an error storing the data.
-  Future<void> put<T>(String key, T value, {Duration? expiry}) async {
+  Future<void> put<T>(
+    String key,
+    T value, {
+    Duration? expiry,
+    Duration? slidingExpiry,
+  }) async {
     try {
       final cacheItem = CacheItem<T>(
         value: value,
         expiry: expiry != null ? DateTime.now().add(expiry) : null,
+        slidingExpiry: slidingExpiry,
       );
       await _cacheAdapter.put(key, cacheItem);
     } on HiveError catch (e) {
@@ -81,6 +87,12 @@ class DataCacheX {
       if (cacheItem.isExpired) {
         await delete(key);
         return null;
+      }
+
+      if (cacheItem.slidingExpiry != null) {
+        final updatedCacheItem = cacheItem.updateExpiry();
+        await _cacheAdapter.put(key, updatedCacheItem);
+        return updatedCacheItem.value as T?;
       }
 
       return cacheItem.value as T?;
@@ -140,6 +152,33 @@ class DataCacheX {
     } catch (e) {
       _log.severe('Failed to check if key exists in cache (Unknown Error): $e');
       throw CacheException('Failed to check if key exists in cache: $e');
+    }
+  }
+
+  /// Invalidates the cache entry associated with the given [key].
+  ///
+  /// This method removes the entry from the cache.
+  Future<void> invalidate(String key) async {
+    await delete(key);
+  }
+
+  /// Invalidates cache entries that match the given [test] condition.
+  ///
+  /// The [test] function is applied to each key-value pair in the cache.
+  /// If the test returns true, the entry is removed from the cache.
+  Future<void> invalidateWhere(
+      bool Function(String key, dynamic value) test) async {
+    try {
+      final keys = await _cacheAdapter.getKeys();
+      for (final key in keys) {
+        final value = await _cacheAdapter.get(key);
+        if (value != null && test(key, value.value)) {
+          await delete(key);
+        }
+      }
+    } catch (e) {
+      _log.severe('Failed to invalidate cache entries (Unknown Error): $e');
+      throw CacheException('Failed to invalidate cache entries: $e');
     }
   }
 }

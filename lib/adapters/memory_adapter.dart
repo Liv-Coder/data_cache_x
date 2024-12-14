@@ -28,4 +28,9 @@ class MemoryAdapter implements CacheAdapter {
   Future<void> put(String key, CacheItem item) async {
     _cache[key] = item;
   }
+
+  @override
+  Future<List<String>> getKeys() async {
+    return _cache.keys.toList();
+  }
 }

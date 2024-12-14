@@ -33,4 +33,9 @@ abstract class CacheAdapter {
   ///
   /// Returns `true` if the cache contains the key, `false` otherwise.
   Future<bool> containsKey(String key);
+
+  /// Returns a list of all keys in the cache.
+  ///
+  /// Throws a [CacheException] if there is an error retrieving the keys.
+  Future<List<String>> getKeys();
 }

@@ -63,8 +63,8 @@ class HiveAdapter implements CacheAdapter {
     return _box.containsKey(key);
   }
 
-  /// Returns a list of all keys in the cache.
-  List<String> keys() {
+  @override
+  Future<List<String>> getKeys() async {
     return _box.keys.cast<String>().toList();
   }
 }
