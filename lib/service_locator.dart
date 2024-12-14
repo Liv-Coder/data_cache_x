@@ -1,6 +1,8 @@
 import 'package:data_cache_x/adapters/cache_adapter.dart';
 import 'package:data_cache_x/adapters/hive/hive_adapter.dart';
 import 'package:data_cache_x/adapters/memory_adapter.dart';
+import 'package:data_cache_x/adapters/sqlite/sqlite_adapter.dart';
+import 'package:data_cache_x/adapters/shared_preferences/shared_preferences_adapter.dart';
 import 'package:data_cache_x/core/data_cache_x.dart';
 import 'package:data_cache_x/core/exception.dart';
 import 'package:data_cache_x/models/cache_item.dart';
@@ -13,6 +15,8 @@ import 'package:hive_flutter/hive_flutter.dart';
 enum CacheAdapterType {
   hive,
   memory,
+  sqlite,
+  sharedPreferences,
 }
 
 final getIt = GetIt.instance;
@@ -112,18 +116,38 @@ Future<void> setupDataCacheX({
 
   // Register CacheAdapter
   CacheAdapter cacheAdapter;
-  if (adapterType == CacheAdapterType.hive) {
-    final hiveAdapter = HiveAdapter(
-      typeAdapterRegistry,
-      boxName: boxName,
-      enableEncryption: enableEncryption,
-    );
-    getIt.registerSingleton<HiveAdapter>(hiveAdapter);
-    cacheAdapter = hiveAdapter;
-  } else {
-    final memoryAdapter = MemoryAdapter(enableEncryption: enableEncryption);
-    getIt.registerSingleton<MemoryAdapter>(memoryAdapter);
-    cacheAdapter = memoryAdapter;
+  switch (adapterType) {
+    case CacheAdapterType.hive:
+      final hiveAdapter = HiveAdapter(
+        typeAdapterRegistry,
+        boxName: boxName,
+        enableEncryption: enableEncryption,
+      );
+      getIt.registerSingleton<HiveAdapter>(hiveAdapter);
+      cacheAdapter = hiveAdapter;
+      break;
+    case CacheAdapterType.memory:
+      final memoryAdapter = MemoryAdapter(enableEncryption: enableEncryption);
+      getIt.registerSingleton<MemoryAdapter>(memoryAdapter);
+      cacheAdapter = memoryAdapter;
+      break;
+    case CacheAdapterType.sqlite:
+      final sqliteAdapter = SqliteAdapter(
+        boxName: boxName,
+        enableEncryption: enableEncryption,
+      );
+      getIt.registerSingleton<SqliteAdapter>(sqliteAdapter);
+      cacheAdapter = sqliteAdapter;
+      break;
+    case CacheAdapterType.sharedPreferences:
+      final sharedPreferencesAdapter = SharedPreferencesAdapter(
+        boxName: boxName,
+        enableEncryption: enableEncryption,
+      );
+      getIt.registerSingleton<SharedPreferencesAdapter>(
+          sharedPreferencesAdapter);
+      cacheAdapter = sharedPreferencesAdapter;
+      break;
   }
 
   // Register DataCacheX
