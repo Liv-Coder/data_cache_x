@@ -68,7 +68,15 @@ class MemoryAdapter implements CacheAdapter {
   }
 
   @override
-  Future<List<String>> getKeys() async {
-    return _cache.keys.toList();
+  Future<List<String>> getKeys({int? limit, int? offset}) async {
+    final keys = _cache.keys.toList();
+    if (limit == null && offset == null) {
+      return keys;
+    }
+
+    final startIndex = offset ?? 0;
+    final endIndex = limit == null ? keys.length : startIndex + limit;
+
+    return keys.skip(startIndex).take(endIndex - startIndex).toList();
   }
 }

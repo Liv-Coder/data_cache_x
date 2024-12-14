@@ -64,12 +64,21 @@ class SharedPreferencesAdapter implements CacheAdapter {
   }
 
   @override
-  Future<List<String>> getKeys() async {
+  Future<List<String>> getKeys({int? limit, int? offset}) async {
     final p = await prefs;
     final keys = p.getKeys();
-    return keys
+    final filteredKeys = keys
         .where((key) => key.startsWith('${boxName ?? 'data_cache_x'}_'))
         .map((key) => key.substring('${boxName ?? 'data_cache_x'}_'.length))
         .toList();
+
+    if (limit == null && offset == null) {
+      return filteredKeys;
+    }
+
+    final startIndex = offset ?? 0;
+    final endIndex = limit == null ? filteredKeys.length : startIndex + limit;
+
+    return filteredKeys.skip(startIndex).take(endIndex - startIndex).toList();
   }
 }

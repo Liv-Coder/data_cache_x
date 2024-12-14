@@ -84,9 +84,14 @@ class SqliteAdapter implements CacheAdapter {
   }
 
   @override
-  Future<List<String>> getKeys() async {
+  Future<List<String>> getKeys({int? limit, int? offset}) async {
     final db = await database;
-    final result = await db.query('cache', columns: ['key']);
+    final result = await db.query(
+      'cache',
+      columns: ['key'],
+      limit: limit,
+      offset: offset,
+    );
     return result.map((e) => e['key'] as String).toList();
   }
 }

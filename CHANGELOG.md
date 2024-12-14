@@ -46,3 +46,4 @@
 - Refactored `_CacheItemAdapter` to be a generic class, and updated `setupDataCacheX` to register it correctly, resolving code duplication issues.
 - Made the `TypeAdapterRegistry` more extensible by allowing users to register custom adapters without providing a `typeId`. The `typeId` will be automatically generated.
 - Added support for more storage adapters, including `SQLite` and `shared preferences`.
+- Implemented a more robust background cleanup mechanism that processes cache items in batches to improve performance and prevent potential issues with large caches.

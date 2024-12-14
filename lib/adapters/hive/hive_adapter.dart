@@ -100,7 +100,15 @@ class HiveAdapter implements CacheAdapter {
   }
 
   @override
-  Future<List<String>> getKeys() async {
-    return _box.keys.cast<String>().toList();
+  Future<List<String>> getKeys({int? limit, int? offset}) async {
+    final keys = _box.keys.cast<String>();
+    if (limit == null && offset == null) {
+      return keys.toList();
+    }
+
+    final startIndex = offset ?? 0;
+    final endIndex = limit == null ? keys.length : startIndex + limit;
+
+    return keys.skip(startIndex).take(endIndex - startIndex).toList();
   }
 }

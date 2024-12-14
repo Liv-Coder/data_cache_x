@@ -10,7 +10,7 @@ const cleanupTaskName = "com.vishwasaraxit.data_cache_x.cleanup";
 /// The callback dispatcher for the workmanager.
 ///
 /// This function is executed by the workmanager in the background.
-/// It retrieves the [CacheAdapter] from the service locator and iterates through the keys,
+/// It retrieves the [CacheAdapter] from the service locator and iterates through the keys in batches,
 /// deleting any expired cache items.
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
@@ -18,14 +18,23 @@ void callbackDispatcher() {
       try {
         // Get the CacheAdapter from the service locator (make sure setup() has been called)
         final cacheAdapter = getIt<CacheAdapter>();
+        const batchSize = 50;
+        int offset = 0;
 
-        // Iterate through the keys and delete expired items
-        final keys = await cacheAdapter.getKeys();
-        for (final key in keys) {
-          final cacheItem = await cacheAdapter.get(key);
-          if (cacheItem != null && cacheItem.isExpired) {
-            await cacheAdapter.delete(key);
+        while (true) {
+          final keys =
+              await cacheAdapter.getKeys(limit: batchSize, offset: offset);
+          if (keys.isEmpty) {
+            break;
           }
+
+          for (final key in keys) {
+            final cacheItem = await cacheAdapter.get(key);
+            if (cacheItem != null && cacheItem.isExpired) {
+              await cacheAdapter.delete(key);
+            }
+          }
+          offset += batchSize;
         }
       } catch (err) {
         log("Error in background cleanup: $err");

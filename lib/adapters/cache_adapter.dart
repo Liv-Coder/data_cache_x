@@ -37,7 +37,8 @@ abstract class CacheAdapter {
   /// Returns a list of all keys in the cache.
   ///
   /// Throws a [CacheException] if there is an error retrieving the keys.
-  Future<List<String>> getKeys();
+  /// The [limit] and [offset] parameters can be used to paginate the results.
+  Future<List<String>> getKeys({int? limit, int? offset});
 
   /// Indicates if encryption is enabled for this adapter.
   bool get enableEncryption;
