@@ -29,3 +29,4 @@
 - Improved type safety by making `CacheItem` generic.
 - Ensured type safety in `HiveAdapter` using a type registry.
 - Made the `setupDataCacheX` function asynchronous to handle potential delays in initializing Hive.
+- Improved error handling in background cleanup by logging errors.

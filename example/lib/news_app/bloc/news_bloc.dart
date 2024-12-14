@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:equatable/equatable.dart';
 import 'package:example/models/news_article.dart';
 import 'package:example/news_app/data/news_repository.dart';
@@ -17,7 +19,7 @@ class NewsBloc extends Bloc<NewsEvent, NewsState> {
         emit(NewsLoaded(news));
       } catch (e) {
         emit(NewsError(e.toString()));
-        print(e);
+        log("Error loading news: $e");
       }
     });
   }

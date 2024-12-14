@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:data_cache_x/adapters/hive/hive_adapter.dart';
 import 'package:workmanager/workmanager.dart';
 import '../service_locator.dart';
@@ -26,6 +28,7 @@ void callbackDispatcher() {
           }
         }
       } catch (err) {
+        log("Error in background cleanup: $err");
         return Future.value(false); // Indicate task failure
       }
     }

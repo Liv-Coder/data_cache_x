@@ -1,7 +1,7 @@
-import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:example/models/todo_item.dart';
 import 'package:example/todo_app/data/todo_repository.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 part 'todo_event.dart';
 part 'todo_state.dart';
