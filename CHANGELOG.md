@@ -44,3 +44,4 @@
 - Made `BackgroundCleanup` more configurable by allowing users to specify the `CacheAdapter` to use for cleanup.
 - Clarified the usage of `enableEncryption` in `MemoryAdapter`, which uses a simple XOR encryption.
 - Refactored `_CacheItemAdapter` to be a generic class, and updated `setupDataCacheX` to register it correctly, resolving code duplication issues.
+- Made the `TypeAdapterRegistry` more extensible by allowing users to register custom adapters without providing a `typeId`. The `typeId` will be automatically generated.

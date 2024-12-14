@@ -31,13 +31,13 @@ class TypeAdapterRegistry {
   final Set<int> _registeredTypeIds = {};
   final Map<Type, DataSerializer> _serializers = {};
 
-  void registerAdapter<T>(TypeAdapter<CacheItem<T>> adapter,
-      {required int typeId}) {
-    _typeIds[T] = typeId;
-    _adapters[typeId] = adapter;
-    if (!_registeredTypeIds.contains(typeId)) {
+  void registerAdapter<T>(TypeAdapter<CacheItem<T>> adapter, {int? typeId}) {
+    final actualTypeId = typeId ?? _typeIds.length + 100;
+    _typeIds[T] = actualTypeId;
+    _adapters[actualTypeId] = adapter;
+    if (!_registeredTypeIds.contains(actualTypeId)) {
       Hive.registerAdapter(adapter);
-      _registeredTypeIds.add(typeId);
+      _registeredTypeIds.add(actualTypeId);
     }
   }
 
@@ -88,13 +88,11 @@ Future<void> setupDataCacheX({
 
   // Register custom adapters
   customAdapters?.forEach((type, adapter) {
-    final typeId = customAdapters.keys.toList().indexOf(type) + 100;
-    typeAdapterRegistry.registerAdapter(adapter, typeId: typeId);
+    typeAdapterRegistry.registerAdapter(adapter);
   });
 
   typeAdapterRegistry.registerAdapter(
     _CacheItemAdapter<dynamic>(typeId: 0),
-    typeId: 0,
   );
 
   // Register default serializers
