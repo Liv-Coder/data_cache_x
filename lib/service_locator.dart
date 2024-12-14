@@ -43,8 +43,10 @@ class TypeAdapterRegistry {
   }
 }
 
-Future<void> setupDataCacheX(
-    {String? boxName, Duration? cleanupFrequency}) async {
+Future<void> setupDataCacheX({
+  String? boxName,
+  Duration? cleanupFrequency,
+}) async {
   // Register TypeAdapterRegistry
   getIt.registerSingleton<TypeAdapterRegistry>(TypeAdapterRegistry());
 
