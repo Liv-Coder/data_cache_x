@@ -152,7 +152,8 @@ Future<void> setupDataCacheX({
   getIt.registerSingleton<DataCacheX>(DataCacheX(cacheAdapter));
 
   // Initialize background cleanup
-  initializeBackgroundCleanup(frequency: cleanupFrequency);
+  initializeBackgroundCleanup(
+      adapter: cacheAdapter, frequency: cleanupFrequency);
 }
 
 class _CacheItemAdapter<T> extends TypeAdapter<CacheItem<T>> {

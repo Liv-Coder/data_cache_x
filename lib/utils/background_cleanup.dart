@@ -1,6 +1,6 @@
 import 'dart:developer';
 
-import 'package:data_cache_x/adapters/hive/hive_adapter.dart';
+import 'package:data_cache_x/adapters/cache_adapter.dart';
 import 'package:workmanager/workmanager.dart';
 import '../service_locator.dart';
 
@@ -10,21 +10,21 @@ const cleanupTaskName = "com.vishwasaraxit.data_cache_x.cleanup";
 /// The callback dispatcher for the workmanager.
 ///
 /// This function is executed by the workmanager in the background.
-/// It retrieves the [HiveAdapter] from the service locator and iterates through the keys,
+/// It retrieves the [CacheAdapter] from the service locator and iterates through the keys,
 /// deleting any expired cache items.
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     if (task == cleanupTaskName) {
       try {
-        // Get the HiveAdapter from the service locator (make sure setup() has been called)
-        final hiveAdapter = getIt<HiveAdapter>();
+        // Get the CacheAdapter from the service locator (make sure setup() has been called)
+        final cacheAdapter = getIt<CacheAdapter>();
 
         // Iterate through the keys and delete expired items
-        final keys = await hiveAdapter.getKeys();
+        final keys = await cacheAdapter.getKeys();
         for (final key in keys) {
-          final cacheItem = await hiveAdapter.get(key);
+          final cacheItem = await cacheAdapter.get(key);
           if (cacheItem != null && cacheItem.isExpired) {
-            await hiveAdapter.delete(key);
+            await cacheAdapter.delete(key);
           }
         }
       } catch (err) {
@@ -43,7 +43,8 @@ void callbackDispatcher() {
 ///
 /// The frequency of the task can be configured using the [frequency] parameter.
 /// By default, it runs every hour.
-void initializeBackgroundCleanup({Duration? frequency}) {
+void initializeBackgroundCleanup(
+    {required CacheAdapter adapter, Duration? frequency}) {
   Workmanager().initialize(
     callbackDispatcher,
     // Set the flag to true if you want to see the logs
@@ -56,4 +57,5 @@ void initializeBackgroundCleanup({Duration? frequency}) {
     cleanupTaskName,
     frequency: frequency ?? Duration(hours: 1),
   );
+  getIt.registerSingleton<CacheAdapter>(adapter);
 }
