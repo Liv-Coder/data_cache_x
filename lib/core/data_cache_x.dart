@@ -4,16 +4,53 @@ import 'package:data_cache_x/models/cache_item.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:logging/logging.dart';
 
-class DataCacheX {
-  final CacheAdapter _cacheAdapter;
+/// The main class for interacting with the cache.
+///
+/// `DataCacheX` provides methods for storing, retrieving, and deleting data.
+/// It uses a [CacheAdapter] to handle the underlying storage.
+///
+/// The generic type parameter `T` represents the type of data that the cache will store.
+///
+/// Example:
+/// ```dart
+/// // Assuming you have a HiveAdapter instance
+/// final hiveAdapter = HiveAdapter<String>(CacheItemStringAdapter());
+/// await hiveAdapter.init();
+///
+/// // Create a DataCacheX instance
+/// final dataCache = DataCacheX<String>(hiveAdapter);
+///
+/// // Store a value
+/// await dataCache.put('name', 'John Doe', expiry: Duration(seconds: 30));
+///
+/// // Retrieve a value
+/// final name = await dataCache.get('name');
+/// print(name); // Output: John Doe
+///
+/// // Delete a value
+/// await dataCache.delete('name');
+///
+/// // Clear the cache
+/// await dataCache.clear();
+/// ```
+class DataCacheX<T> {
+  final CacheAdapter<T> _cacheAdapter;
 
+  /// Creates a new instance of [DataCacheX].
+  ///
+  /// The [cacheAdapter] parameter is required to handle the underlying storage.
   DataCacheX(this._cacheAdapter);
 
   final _log = Logger('DataCache');
 
-  Future<void> put<T>(String key, T value, {Duration? expiry}) async {
+  /// Stores a [value] in the cache with the given [key].
+  ///
+  /// The [expiry] parameter can be used to set an optional expiry time for the data.
+  ///
+  /// Throws a [CacheException] if there is an error storing the data.
+  Future<void> put(String key, T value, {Duration? expiry}) async {
     try {
-      final cacheItem = CacheItem(
+      final cacheItem = CacheItem<T>(
         value: value,
         expiry: expiry != null ? DateTime.now().add(expiry) : null,
       );
@@ -27,7 +64,13 @@ class DataCacheX {
     }
   }
 
-  Future<T?> get<T>(String key) async {
+  /// Retrieves the value associated with the given [key].
+  ///
+  /// Returns `null` if no value is found for the given [key] or if the value is expired.
+  ///
+  /// Throws an [ArgumentError] if the key is empty.
+  /// Throws a [CacheException] if there is an error retrieving the data.
+  Future<T?> get(String key) async {
     if (key.isEmpty) {
       throw ArgumentError('Key cannot be empty');
     }
@@ -42,7 +85,7 @@ class DataCacheX {
         return null;
       }
 
-      return cacheItem.value as T;
+      return cacheItem.value;
     } on HiveError catch (e) {
       _log.severe('Failed to get data from cache (HiveError): $e');
       throw CacheException('Failed to get data from cache: ${e.message}');
@@ -52,6 +95,10 @@ class DataCacheX {
     }
   }
 
+  /// Deletes the value associated with the given [key].
+  ///
+  /// Throws an [ArgumentError] if the key is empty.
+  /// Throws a [CacheException] if there is an error deleting the data.
   Future<void> delete(String key) async {
     if (key.isEmpty) {
       throw ArgumentError('Key cannot be empty');
@@ -67,6 +114,9 @@ class DataCacheX {
     }
   }
 
+  /// Clears all data from the cache.
+  ///
+  /// Throws a [CacheException] if there is an error clearing the cache.
   Future<void> clear() async {
     try {
       await _cacheAdapter.clear();
@@ -75,6 +125,10 @@ class DataCacheX {
     }
   }
 
+  /// Checks if the cache contains a value associated with the given [key].
+  ///
+  /// Throws an [ArgumentError] if the key is empty.
+  /// Throws a [CacheException] if there is an error checking the key.
   Future<bool> containsKey(String key) async {
     try {
       if (key.isEmpty) {
