@@ -22,3 +22,9 @@
 ## 0.1.3+1
 
 - Included Readme.md
+
+## 0.1.4
+
+- Added configuration options for `Hive box name` and `background cleanup` frequency.
+- Improved type safety by making `CacheItem` generic.
+- Ensured type safety in `HiveAdapter` using a type registry.

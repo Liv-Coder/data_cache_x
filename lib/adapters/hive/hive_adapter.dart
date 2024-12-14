@@ -18,7 +18,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 /// final item = await adapter.get('myKey');
 /// print(item?.value);
 class HiveAdapter implements CacheAdapter {
-  static const String _boxName = 'data_cache_x';
+  final String _boxName;
   late Box _box;
 
   /// The type adapter registry used to get the correct adapter for a given type.
@@ -27,7 +27,9 @@ class HiveAdapter implements CacheAdapter {
   /// Creates a new instance of [HiveAdapter].
   ///
   /// The [typeAdapterRegistry] parameter is required to handle the serialization and deserialization of `CacheItem<T>` objects.
-  HiveAdapter(this.typeAdapterRegistry);
+  /// The [boxName] parameter is optional and defaults to 'data_cache_x'.
+  HiveAdapter(this.typeAdapterRegistry, {String? boxName})
+      : _boxName = boxName ?? 'data_cache_x';
 
   /// Initializes the Hive database and registers the type adapter.
   ///

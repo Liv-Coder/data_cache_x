@@ -1,6 +1,7 @@
 import 'package:data_cache_x/adapters/hive/hive_adapter.dart';
 import 'package:data_cache_x/core/data_cache_x.dart';
 import 'package:data_cache_x/models/cache_item.dart';
+import 'package:data_cache_x/utils/background_cleanup.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -42,7 +43,8 @@ class TypeAdapterRegistry {
   }
 }
 
-Future<void> setupDataCacheX() async {
+Future<void> setupDataCacheX(
+    {String? boxName, Duration? cleanupFrequency}) async {
   // Register TypeAdapterRegistry
   getIt.registerSingleton<TypeAdapterRegistry>(TypeAdapterRegistry());
 
@@ -77,11 +79,14 @@ Future<void> setupDataCacheX() async {
   );
 
   // Register HiveAdapter
-  final hiveAdapter = HiveAdapter(typeAdapterRegistry);
+  final hiveAdapter = HiveAdapter(typeAdapterRegistry, boxName: boxName);
   getIt.registerSingleton<HiveAdapter>(hiveAdapter);
 
   // Register DataCacheX
   getIt.registerSingleton<DataCacheX>(DataCacheX(hiveAdapter));
+
+  // Initialize background cleanup
+  initializeBackgroundCleanup(frequency: cleanupFrequency);
 }
 
 class _CacheItemAdapter<T> extends TypeAdapter<CacheItem<T>> {

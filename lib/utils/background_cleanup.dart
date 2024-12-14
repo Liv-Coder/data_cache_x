@@ -38,9 +38,9 @@ void callbackDispatcher() {
 /// This function initializes the workmanager and registers a periodic task
 /// that runs the [callbackDispatcher] function.
 ///
-/// The frequency of the task can be configured using the [registerPeriodicTask] method.
+/// The frequency of the task can be configured using the [frequency] parameter.
 /// By default, it runs every hour.
-void initializeBackgroundCleanup() {
+void initializeBackgroundCleanup({Duration? frequency}) {
   Workmanager().initialize(
     callbackDispatcher,
     // Set the flag to true if you want to see the logs
@@ -51,6 +51,6 @@ void initializeBackgroundCleanup() {
   Workmanager().registerPeriodicTask(
     cleanupTaskName,
     cleanupTaskName,
-    frequency: Duration(hours: 1),
+    frequency: frequency ?? Duration(hours: 1),
   );
 }
