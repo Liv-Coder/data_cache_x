@@ -37,3 +37,4 @@
 - Added methods to `invalidate cache` entries by `key` or by a `custom condition`.
 - Added an option to encrypt sensitive data stored in the cache.
 - Users can now enable encryption for both Hive and in-memory adapters.
+- Exposed metrics for cache usage, including hit count, miss count, and hit rate, to help users monitor the cache's performance.

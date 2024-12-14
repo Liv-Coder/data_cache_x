@@ -41,6 +41,29 @@ class DataCacheX {
 
   final _log = Logger('DataCache');
 
+  int _hitCount = 0;
+  int _missCount = 0;
+
+  /// Gets the number of cache hits.
+  int get hitCount => _hitCount;
+
+  /// Gets the number of cache misses.
+  int get missCount => _missCount;
+
+  /// Gets the cache hit rate.
+  double get hitRate {
+    if (_hitCount + _missCount == 0) {
+      return 0;
+    }
+    return _hitCount / (_hitCount + _missCount);
+  }
+
+  /// Resets the cache metrics.
+  void resetMetrics() {
+    _hitCount = 0;
+    _missCount = 0;
+  }
+
   /// Stores a [value] in the cache with the given [key].
   ///
   /// The [expiry] parameter can be used to set an optional expiry time for the data.
@@ -81,10 +104,12 @@ class DataCacheX {
     try {
       final cacheItem = await _cacheAdapter.get(key);
       if (cacheItem == null) {
+        _missCount++;
         return null;
       }
 
       if (cacheItem.isExpired) {
+        _missCount++;
         await delete(key);
         return null;
       }
@@ -92,9 +117,10 @@ class DataCacheX {
       if (cacheItem.slidingExpiry != null) {
         final updatedCacheItem = cacheItem.updateExpiry();
         await _cacheAdapter.put(key, updatedCacheItem);
+        _hitCount++;
         return updatedCacheItem.value as T?;
       }
-
+      _hitCount++;
       return cacheItem.value as T?;
     } on HiveError catch (e) {
       _log.severe('Failed to get data from cache (HiveError): $e');
