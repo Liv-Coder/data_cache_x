@@ -3,6 +3,8 @@ import 'package:data_cache_x/adapters/hive/hive_adapter.dart';
 import 'package:data_cache_x/adapters/memory_adapter.dart';
 import 'package:data_cache_x/core/data_cache_x.dart';
 import 'package:data_cache_x/models/cache_item.dart';
+import 'package:data_cache_x/serializers/data_serializer.dart';
+import 'package:data_cache_x/serializers/json_data_serializer.dart';
 import 'package:data_cache_x/utils/background_cleanup.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -26,6 +28,7 @@ class TypeAdapterRegistry {
   final Map<Type, int> _typeIds = {};
   final Map<int, TypeAdapter> _adapters = {};
   final Set<int> _registeredTypeIds = {};
+  final Map<Type, DataSerializer> _serializers = {};
 
   void registerAdapter<T>(TypeAdapter<CacheItem<T>> adapter,
       {required int typeId}) {
@@ -35,6 +38,10 @@ class TypeAdapterRegistry {
       Hive.registerAdapter(adapter);
       _registeredTypeIds.add(typeId);
     }
+  }
+
+  void registerSerializer<T>(DataSerializer<T> serializer) {
+    _serializers[T] = serializer;
   }
 
   TypeAdapter<CacheItem<T>> getAdapter<T>() {
@@ -47,6 +54,14 @@ class TypeAdapterRegistry {
       throw Exception('No adapter registered for type ID $typeId');
     }
     return adapter as TypeAdapter<CacheItem<T>>;
+  }
+
+  DataSerializer<T> getSerializer<T>() {
+    final serializer = _serializers[T];
+    if (serializer == null) {
+      throw Exception('No serializer registered for type $T');
+    }
+    return serializer as DataSerializer<T>;
   }
 }
 
@@ -90,6 +105,16 @@ Future<void> setupDataCacheX({
     _CacheItemAdapter<Map<String, dynamic>>(typeId: 6),
     typeId: 6,
   );
+
+  // Register default serializers
+  typeAdapterRegistry.registerSerializer<String>(JsonDataSerializer<String>());
+  typeAdapterRegistry.registerSerializer<int>(JsonDataSerializer<int>());
+  typeAdapterRegistry.registerSerializer<double>(JsonDataSerializer<double>());
+  typeAdapterRegistry.registerSerializer<bool>(JsonDataSerializer<bool>());
+  typeAdapterRegistry
+      .registerSerializer<List<String>>(JsonDataSerializer<List<String>>());
+  typeAdapterRegistry.registerSerializer<Map<String, dynamic>>(
+      JsonDataSerializer<Map<String, dynamic>>());
 
   // Register CacheAdapter
   CacheAdapter cacheAdapter;

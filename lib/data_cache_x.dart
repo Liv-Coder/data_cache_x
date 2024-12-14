@@ -34,7 +34,7 @@ export 'package:data_cache_x/adapters/memory_adapter.dart';
 export 'package:data_cache_x/models/cache_item.dart';
 
 // Serializers
-// export 'package:data_cache_x/src/serializers/data_serializer.dart';
+export 'package:data_cache_x/serializers/data_serializer.dart';
 
 // Utils
 export 'package:data_cache_x/utils/background_cleanup.dart';
