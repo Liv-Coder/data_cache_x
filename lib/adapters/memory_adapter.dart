@@ -1,8 +1,30 @@
 import 'package:data_cache_x/adapters/cache_adapter.dart';
 import 'package:data_cache_x/models/cache_item.dart';
+import 'dart:convert';
 
 class MemoryAdapter implements CacheAdapter {
   final Map<String, CacheItem> _cache = {};
+
+  @override
+  final bool enableEncryption;
+
+  MemoryAdapter({this.enableEncryption = false});
+
+  String _xorEncrypt(String data, String key) {
+    final keyBytes = utf8.encode(key);
+    final dataBytes = utf8.encode(data);
+    final encryptedBytes = List<int>.generate(
+        dataBytes.length, (i) => dataBytes[i] ^ keyBytes[i % keyBytes.length]);
+    return base64.encode(encryptedBytes);
+  }
+
+  String _xorDecrypt(String encryptedData, String key) {
+    final keyBytes = utf8.encode(key);
+    final encryptedBytes = base64.decode(encryptedData);
+    final decryptedBytes = List<int>.generate(encryptedBytes.length,
+        (i) => encryptedBytes[i] ^ keyBytes[i % keyBytes.length]);
+    return utf8.decode(decryptedBytes);
+  }
 
   @override
   Future<void> clear() async {
@@ -11,7 +33,17 @@ class MemoryAdapter implements CacheAdapter {
 
   @override
   Future<CacheItem?> get(String key) async {
-    return _cache[key];
+    final storedValue = _cache[key];
+    if (storedValue == null) {
+      return null;
+    }
+    if (enableEncryption) {
+      final decryptedValue =
+          _xorDecrypt(storedValue.toJson().toString(), 'my_secret_key');
+      return CacheItem.fromJson(jsonDecode(decryptedValue));
+    } else {
+      return storedValue;
+    }
   }
 
   @override
@@ -26,7 +58,13 @@ class MemoryAdapter implements CacheAdapter {
 
   @override
   Future<void> put(String key, CacheItem item) async {
-    _cache[key] = item;
+    if (enableEncryption) {
+      final encryptedValue =
+          _xorEncrypt(jsonEncode(item.toJson()), 'my_secret_key');
+      _cache[key] = CacheItem.fromJson(jsonDecode(encryptedValue));
+    } else {
+      _cache[key] = item;
+    }
   }
 
   @override

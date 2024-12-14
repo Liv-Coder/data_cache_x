@@ -35,3 +35,5 @@
 - Implemented `sliding expiration`, resetting the `expiry time` on each access.
 - Implemented `cache invalidation` feature.
 - Added methods to `invalidate cache` entries by `key` or by a `custom condition`.
+- Added an option to encrypt sensitive data stored in the cache.
+- Users can now enable encryption for both Hive and in-memory adapters.

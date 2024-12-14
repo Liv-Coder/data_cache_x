@@ -7,6 +7,11 @@ import 'package:data_cache_x/utils/background_cleanup.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+enum CacheAdapterType {
+  hive,
+  memory,
+}
+
 final getIt = GetIt.instance;
 
 class TypeAdapterRegistry {
@@ -49,6 +54,7 @@ Future<void> setupDataCacheX({
   String? boxName,
   Duration? cleanupFrequency,
   CacheAdapterType adapterType = CacheAdapterType.hive,
+  bool enableEncryption = false,
 }) async {
   // Register TypeAdapterRegistry
   getIt.registerSingleton<TypeAdapterRegistry>(TypeAdapterRegistry());
@@ -88,11 +94,15 @@ Future<void> setupDataCacheX({
   // Register CacheAdapter
   CacheAdapter cacheAdapter;
   if (adapterType == CacheAdapterType.hive) {
-    final hiveAdapter = HiveAdapter(typeAdapterRegistry, boxName: boxName);
+    final hiveAdapter = HiveAdapter(
+      typeAdapterRegistry,
+      boxName: boxName,
+      enableEncryption: enableEncryption,
+    );
     getIt.registerSingleton<HiveAdapter>(hiveAdapter);
     cacheAdapter = hiveAdapter;
   } else {
-    final memoryAdapter = MemoryAdapter();
+    final memoryAdapter = MemoryAdapter(enableEncryption: enableEncryption);
     getIt.registerSingleton<MemoryAdapter>(memoryAdapter);
     cacheAdapter = memoryAdapter;
   }
@@ -102,11 +112,6 @@ Future<void> setupDataCacheX({
 
   // Initialize background cleanup
   initializeBackgroundCleanup(frequency: cleanupFrequency);
-}
-
-enum CacheAdapterType {
-  hive,
-  memory,
 }
 
 class _CacheItemAdapter<T> extends TypeAdapter<CacheItem<T>> {

@@ -38,4 +38,7 @@ abstract class CacheAdapter {
   ///
   /// Throws a [CacheException] if there is an error retrieving the keys.
   Future<List<String>> getKeys();
+
+  /// Indicates if encryption is enabled for this adapter.
+  bool get enableEncryption;
 }
