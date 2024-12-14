@@ -58,3 +58,29 @@ class CacheException implements Exception {
   @override
   String toString() => 'CacheException: $message';
 }
+
+/// Thrown when an adapter is not found in the registry.
+class AdapterNotFoundException implements Exception {
+  final String message;
+
+  /// Creates a new instance of [AdapterNotFoundException].
+  ///
+  /// The [message] parameter provides more details about the exception.
+  AdapterNotFoundException(this.message);
+
+  @override
+  String toString() => 'AdapterNotFoundException: $message';
+}
+
+/// Thrown when a serializer is not found in the registry.
+class SerializerNotFoundException implements Exception {
+  final String message;
+
+  /// Creates a new instance of [SerializerNotFoundException].
+  ///
+  /// The [message] parameter provides more details about the exception.
+  SerializerNotFoundException(this.message);
+
+  @override
+  String toString() => 'SerializerNotFoundException: $message';
+}

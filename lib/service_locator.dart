@@ -2,6 +2,7 @@ import 'package:data_cache_x/adapters/cache_adapter.dart';
 import 'package:data_cache_x/adapters/hive/hive_adapter.dart';
 import 'package:data_cache_x/adapters/memory_adapter.dart';
 import 'package:data_cache_x/core/data_cache_x.dart';
+import 'package:data_cache_x/core/exception.dart';
 import 'package:data_cache_x/models/cache_item.dart';
 import 'package:data_cache_x/serializers/data_serializer.dart';
 import 'package:data_cache_x/serializers/json_data_serializer.dart';
@@ -47,11 +48,12 @@ class TypeAdapterRegistry {
   TypeAdapter<CacheItem<T>> getAdapter<T>() {
     final typeId = _typeIds[T];
     if (typeId == null) {
-      throw Exception('No adapter registered for type $T');
+      throw AdapterNotFoundException('No adapter registered for type $T');
     }
     final adapter = _adapters[typeId];
     if (adapter == null) {
-      throw Exception('No adapter registered for type ID $typeId');
+      throw AdapterNotFoundException(
+          'No adapter registered for type ID $typeId');
     }
     return adapter as TypeAdapter<CacheItem<T>>;
   }
@@ -59,7 +61,7 @@ class TypeAdapterRegistry {
   DataSerializer<T> getSerializer<T>() {
     final serializer = _serializers[T];
     if (serializer == null) {
-      throw Exception('No serializer registered for type $T');
+      throw SerializerNotFoundException('No serializer registered for type $T');
     }
     return serializer as DataSerializer<T>;
   }
@@ -70,6 +72,8 @@ Future<void> setupDataCacheX({
   Duration? cleanupFrequency,
   CacheAdapterType adapterType = CacheAdapterType.hive,
   bool enableEncryption = false,
+  Map<Type, TypeAdapter<CacheItem>>? customAdapters,
+  Map<Type, DataSerializer>? customSerializers,
 }) async {
   // Register TypeAdapterRegistry
   getIt.registerSingleton<TypeAdapterRegistry>(TypeAdapterRegistry());
@@ -81,6 +85,13 @@ Future<void> setupDataCacheX({
 
   // Register default adapters
   final typeAdapterRegistry = getIt<TypeAdapterRegistry>();
+
+  // Register custom adapters
+  customAdapters?.forEach((type, adapter) {
+    final typeId = customAdapters.keys.toList().indexOf(type) + 100;
+    typeAdapterRegistry.registerAdapter(adapter, typeId: typeId);
+  });
+
   typeAdapterRegistry.registerAdapter(
     _CacheItemAdapter<String>(typeId: 1),
     typeId: 1,
@@ -115,6 +126,11 @@ Future<void> setupDataCacheX({
       .registerSerializer<List<String>>(JsonDataSerializer<List<String>>());
   typeAdapterRegistry.registerSerializer<Map<String, dynamic>>(
       JsonDataSerializer<Map<String, dynamic>>());
+
+  // Register custom serializers
+  customSerializers?.forEach((type, serializer) {
+    typeAdapterRegistry.registerSerializer(serializer);
+  });
 
   // Register CacheAdapter
   CacheAdapter cacheAdapter;

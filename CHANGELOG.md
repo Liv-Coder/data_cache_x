@@ -39,3 +39,5 @@
 - Users can now enable encryption for both Hive and in-memory adapters.
 - Exposed metrics for cache usage, including hit count, miss count, and hit rate, to help users monitor the cache's performance.
 - Implemented custom object serialization using `DataSerializer` and `JsonDataSerializer`.
+- Introduced custom exceptions for better error handling in `TypeAdapterRegistry`, providing more specific error information.
+- Enhanced the `setupDataCacheX` function to be more configurable, allowing users to register their own custom adapters and serializers.
