@@ -33,8 +33,12 @@ class TypeAdapterRegistry {
   final Map<Type, TypeAdapter> _adapters = {};
   final Map<Type, DataSerializer> _serializers = {};
 
-  void registerAdapter<T>(TypeAdapter<CacheItem<T>> adapter) {
-    _adapters[T] = adapter;
+  void registerAdapter<T>(TypeAdapter<CacheItem<T>> adapter, {int? typeId}) {
+    if (typeId != null) {
+      _adapters[T] = _CacheItemAdapter<T>(typeId: typeId);
+    } else {
+      _adapters[T] = adapter;
+    }
   }
 
   void registerSerializer<T>(DataSerializer<T> serializer) {
@@ -112,37 +116,55 @@ Future<void> setupDataCacheX({
   CacheAdapter cacheAdapter;
   switch (adapterType) {
     case CacheAdapterType.hive:
-      final hiveAdapter = HiveAdapter(
-        typeAdapterRegistry,
-        boxName: boxName,
-        enableEncryption: enableEncryption,
-        encryptionKey: encryptionKey,
-      );
-      getIt.registerSingleton<HiveAdapter>(hiveAdapter);
-      cacheAdapter = hiveAdapter;
+      if (!getIt.isRegistered<HiveAdapter>()) {
+        final hiveAdapter = HiveAdapter(
+          typeAdapterRegistry,
+          boxName: boxName,
+          enableEncryption: enableEncryption,
+          encryptionKey: encryptionKey,
+        );
+        getIt.registerSingleton<HiveAdapter>(hiveAdapter);
+        cacheAdapter = hiveAdapter;
+      } else {
+        cacheAdapter = getIt<HiveAdapter>();
+      }
       break;
     case CacheAdapterType.memory:
-      final memoryAdapter = MemoryAdapter(
-          enableEncryption: enableEncryption, encryptionKey: encryptionKey);
-      getIt.registerSingleton<MemoryAdapter>(memoryAdapter);
-      cacheAdapter = memoryAdapter;
+      if (!getIt.isRegistered<MemoryAdapter>()) {
+        final memoryAdapter = MemoryAdapter(
+            enableEncryption: enableEncryption, encryptionKey: encryptionKey);
+        getIt.registerSingleton<MemoryAdapter>(memoryAdapter);
+        cacheAdapter = memoryAdapter;
+      } else {
+        cacheAdapter = getIt<MemoryAdapter>();
+      }
       break;
     case CacheAdapterType.sqlite:
-      final sqliteAdapter = SqliteAdapter(
-        boxName: boxName,
-        enableEncryption: enableEncryption,
-      );
-      getIt.registerSingleton<SqliteAdapter>(sqliteAdapter);
-      cacheAdapter = sqliteAdapter;
+      if (!getIt.isRegistered<SqliteAdapter>()) {
+        final sqliteAdapter = SqliteAdapter(
+          boxName: boxName,
+          enableEncryption: enableEncryption,
+          encryptionKey: encryptionKey,
+        );
+        getIt.registerSingleton<SqliteAdapter>(sqliteAdapter);
+        cacheAdapter = sqliteAdapter;
+      } else {
+        cacheAdapter = getIt<SqliteAdapter>();
+      }
       break;
     case CacheAdapterType.sharedPreferences:
-      final sharedPreferencesAdapter = SharedPreferencesAdapter(
-        boxName: boxName,
-        enableEncryption: enableEncryption,
-      );
-      getIt.registerSingleton<SharedPreferencesAdapter>(
-          sharedPreferencesAdapter);
-      cacheAdapter = sharedPreferencesAdapter;
+      if (!getIt.isRegistered<SharedPreferencesAdapter>()) {
+        final sharedPreferencesAdapter = SharedPreferencesAdapter(
+          boxName: boxName,
+          enableEncryption: enableEncryption,
+          encryptionKey: encryptionKey,
+        );
+        getIt.registerSingleton<SharedPreferencesAdapter>(
+            sharedPreferencesAdapter);
+        cacheAdapter = sharedPreferencesAdapter;
+      } else {
+        cacheAdapter = getIt<SharedPreferencesAdapter>();
+      }
       break;
   }
 
