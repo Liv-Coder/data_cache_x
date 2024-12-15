@@ -30,19 +30,11 @@ class TypeAdapterRegistry {
 
   TypeAdapterRegistry._internal();
 
-  final Map<Type, int> _typeIds = {};
-  final Map<int, TypeAdapter> _adapters = {};
-  final Set<int> _registeredTypeIds = {};
+  final Map<Type, TypeAdapter> _adapters = {};
   final Map<Type, DataSerializer> _serializers = {};
 
-  void registerAdapter<T>(TypeAdapter<CacheItem<T>> adapter, {int? typeId}) {
-    final actualTypeId = typeId ?? _typeIds.length + 100;
-    _typeIds[T] = actualTypeId;
-    _adapters[actualTypeId] = adapter;
-    if (!_registeredTypeIds.contains(actualTypeId)) {
-      Hive.registerAdapter(adapter);
-      _registeredTypeIds.add(actualTypeId);
-    }
+  void registerAdapter<T>(TypeAdapter<CacheItem<T>> adapter) {
+    _adapters[T] = adapter;
   }
 
   void registerSerializer<T>(DataSerializer<T> serializer) {
@@ -50,14 +42,9 @@ class TypeAdapterRegistry {
   }
 
   TypeAdapter<CacheItem<T>> getAdapter<T>() {
-    final typeId = _typeIds[T];
-    if (typeId == null) {
-      throw AdapterNotFoundException('No adapter registered for type $T');
-    }
-    final adapter = _adapters[typeId];
+    final adapter = _adapters[T];
     if (adapter == null) {
-      throw AdapterNotFoundException(
-          'No adapter registered for type ID $typeId');
+      throw AdapterNotFoundException('No adapter registered for type $T');
     }
     return adapter as TypeAdapter<CacheItem<T>>;
   }
@@ -94,11 +81,17 @@ Future<void> setupDataCacheX({
   // Register custom adapters
   customAdapters?.forEach((type, adapter) {
     typeAdapterRegistry.registerAdapter(adapter);
+    if (adapterType == CacheAdapterType.hive) {
+      Hive.registerAdapter(adapter);
+    }
   });
 
   typeAdapterRegistry.registerAdapter(
     _CacheItemAdapter<dynamic>(typeId: 0),
   );
+  if (adapterType == CacheAdapterType.hive) {
+    Hive.registerAdapter(_CacheItemAdapter<dynamic>(typeId: 0));
+  }
 
   // Register default serializers
   typeAdapterRegistry.registerSerializer<String>(JsonDataSerializer<String>());
