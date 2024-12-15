@@ -25,7 +25,7 @@
 
 ## 0.1.4
 
-- Introduced configurable options for Hive box name and background cleanup frequency.
+- Introduced configurable options for `Hive` box name and `background` cleanup frequency.
 - Improved type safety by using generics for `CacheItem` and a type registry for `HiveAdapter`.
 - Made `setupDataCacheX` asynchronous to handle potential initialization delays.
 - Enhanced error handling in background cleanup with logging.
