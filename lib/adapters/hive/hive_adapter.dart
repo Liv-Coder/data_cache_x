@@ -1,16 +1,16 @@
 import 'package:data_cache_x/adapters/cache_adapter.dart';
 import 'package:data_cache_x/models/cache_item.dart';
-import 'package:data_cache_x/service_locator.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'dart:convert';
+import 'package:encrypt/encrypt.dart';
+import 'package:data_cache_x/service_locator.dart';
 
 /// A concrete implementation of [CacheAdapter] that uses the Hive NoSQL database for storage.
 ///
 /// Example:
 /// ```dart
-/// // Initialize the Hive adapter
-/// final adapter = HiveAdapter(typeAdapterRegistry);
-/// await adapter.init();
+/// // Initialize the hive adapter
+/// final adapter = HiveAdapter(boxName: 'myBox');
 ///
 /// // Store a value
 /// await adapter.put('myKey', CacheItem<String>(value: 'myValue', expiry: DateTime.now().add(Duration(days: 1))));
@@ -18,52 +18,49 @@ import 'dart:convert';
 /// // Retrieve a value
 /// final item = await adapter.get('myKey');
 /// print(item?.value);
+/// ```
 class HiveAdapter implements CacheAdapter {
-  final String _boxName;
-  late Box _box;
+  late final Box _box;
+  final String _encryptionKey;
 
   @override
   final bool enableEncryption;
 
-  /// The type adapter registry used to get the correct adapter for a given type.
-  final TypeAdapterRegistry typeAdapterRegistry;
-
   /// Creates a new instance of [HiveAdapter].
   ///
-  /// The [typeAdapterRegistry] parameter is required to handle the serialization and deserialization of `CacheItem<T>` objects.
-  /// The [boxName] parameter is optional and defaults to 'data_cache_x'.
-  HiveAdapter(this.typeAdapterRegistry,
-      {String? boxName, this.enableEncryption = false})
-      : _boxName = boxName ?? 'data_cache_x';
+  /// The [boxName] parameter is used to specify the name of the Hive box to use.
+  /// If no [boxName] is provided, a default box name of 'data_cache_x' will be used.
+  HiveAdapter(
+    this.typeAdapterRegistry, {
+    String? boxName,
+    this.enableEncryption = false,
+    String? encryptionKey,
+  })  : _encryptionKey = encryptionKey ?? 'default_secret_key',
+        _box = Hive.box(boxName ?? 'data_cache_x');
 
-  /// Initializes the Hive database and registers the type adapter.
-  ///
-  /// This method must be called before using the adapter.
-  Future<void> init() async {
-    _box = await Hive.openBox(_boxName);
+  final TypeAdapterRegistry typeAdapterRegistry;
+
+  String _aesEncrypt(String data) {
+    final key = Key.fromUtf8(_encryptionKey.padRight(32, '0').substring(0, 32));
+    final iv = IV.fromLength(16);
+    final encrypter = Encrypter(AES(key));
+    final encrypted = encrypter.encrypt(data, iv: iv);
+    return encrypted.base64;
   }
 
-  String _xorEncrypt(String data, String key) {
-    final keyBytes = utf8.encode(key);
-    final dataBytes = utf8.encode(data);
-    final encryptedBytes = List<int>.generate(
-        dataBytes.length, (i) => dataBytes[i] ^ keyBytes[i % keyBytes.length]);
-    return base64.encode(encryptedBytes);
-  }
-
-  String _xorDecrypt(String encryptedData, String key) {
-    final keyBytes = utf8.encode(key);
-    final encryptedBytes = base64.decode(encryptedData);
-    final decryptedBytes = List<int>.generate(encryptedBytes.length,
-        (i) => encryptedBytes[i] ^ keyBytes[i % keyBytes.length]);
-    return utf8.decode(decryptedBytes);
+  String _aesDecrypt(String encryptedData) {
+    final key = Key.fromUtf8(_encryptionKey.padRight(32, '0').substring(0, 32));
+    final iv = IV.fromLength(16);
+    final encrypter = Encrypter(AES(key));
+    final decrypted =
+        encrypter.decrypt(Encrypted.fromBase64(encryptedData), iv: iv);
+    return decrypted;
   }
 
   @override
   Future<void> put(String key, CacheItem<dynamic> value) async {
     if (enableEncryption) {
-      final encryptedValue =
-          _xorEncrypt(jsonEncode(value.toJson()), 'my_secret_key');
+      final encryptedValue = _aesEncrypt(jsonEncode(value.toJson()));
       await _box.put(key, encryptedValue);
     } else {
       await _box.put(key, value);
@@ -77,7 +74,7 @@ class HiveAdapter implements CacheAdapter {
       return null;
     }
     if (enableEncryption) {
-      final decryptedValue = _xorDecrypt(storedValue, 'my_secret_key');
+      final decryptedValue = _aesDecrypt(storedValue);
       return CacheItem.fromJson(jsonDecode(decryptedValue));
     } else {
       return storedValue as CacheItem<dynamic>?;
@@ -101,9 +98,9 @@ class HiveAdapter implements CacheAdapter {
 
   @override
   Future<List<String>> getKeys({int? limit, int? offset}) async {
-    final keys = _box.keys.cast<String>();
+    final keys = _box.keys.toList().cast<String>();
     if (limit == null && offset == null) {
-      return keys.toList();
+      return keys;
     }
 
     final startIndex = offset ?? 0;

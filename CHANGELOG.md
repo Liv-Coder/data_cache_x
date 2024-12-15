@@ -25,25 +25,17 @@
 
 ## 0.1.4
 
-- Added configuration options for `Hive box name` and `background cleanup` frequency.
-- Improved type safety by making `CacheItem` generic.
-- Ensured type safety in `HiveAdapter` using a type registry.
-- Made the `setupDataCacheX` function asynchronous to handle potential delays in initializing Hive.
-- Improved error handling in `background cleanup` by logging errors.
-- Added support for `multiple cache adapters`, including an `in-memory` adapter.
-- Users can now choose between `Hive` and `in-memory storage`.
-- Implemented `sliding expiration`, resetting the `expiry time` on each access.
-- Implemented `cache invalidation` feature.
-- Added methods to `invalidate cache` entries by `key` or by a `custom condition`.
-- Added an option to encrypt sensitive data stored in the cache.
-- Users can now enable encryption for both Hive and in-memory adapters.
-- Exposed metrics for cache usage, including hit count, miss count, and hit rate, to help users monitor the cache's performance.
+- Introduced configurable options for Hive box name and background cleanup frequency.
+- Improved type safety by using generics for `CacheItem` and a type registry for `HiveAdapter`.
+- Made `setupDataCacheX` asynchronous to handle potential initialization delays.
+- Enhanced error handling in background cleanup with logging.
+- Added support for multiple cache adapters, including an in-memory option.
+- Implemented sliding expiration, cache invalidation by key or custom condition, and data encryption.
+- Exposed metrics for cache usage, including hit count, miss count, and hit rate.
 - Implemented custom object serialization using `DataSerializer` and `JsonDataSerializer`.
-- Introduced custom exceptions for better error handling in `TypeAdapterRegistry`, providing more specific error information.
-- Enhanced the `setupDataCacheX` function to be more configurable, allowing users to register their own custom adapters and serializers.
-- Made `BackgroundCleanup` more configurable by allowing users to specify the `CacheAdapter` to use for cleanup.
-- Clarified the usage of `enableEncryption` in `MemoryAdapter`, which uses a simple XOR encryption.
-- Refactored `_CacheItemAdapter` to be a generic class, and updated `setupDataCacheX` to register it correctly, resolving code duplication issues.
-- Made the `TypeAdapterRegistry` more extensible by allowing users to register custom adapters without providing a `typeId`. The `typeId` will be automatically generated.
+- Introduced custom exceptions for better error handling in `TypeAdapterRegistry`.
+- Enhanced `setupDataCacheX` and `BackgroundCleanup` to be more configurable, allowing custom adapters and serializers.
+- Improved encryption in `MemoryAdapter` by using AES encryption with a configurable key.
+- The encryption key for both `MemoryAdapter` and `HiveAdapter` is now configurable.
 - Added support for more storage adapters, including `SQLite` and `shared preferences`.
-- Implemented a more robust background cleanup mechanism that processes cache items in batches to improve performance and prevent potential issues with large caches.
+- Implemented a more robust background cleanup mechanism that processes cache items in batches.

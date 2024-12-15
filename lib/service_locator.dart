@@ -76,6 +76,7 @@ Future<void> setupDataCacheX({
   Duration? cleanupFrequency,
   CacheAdapterType adapterType = CacheAdapterType.hive,
   bool enableEncryption = false,
+  String? encryptionKey,
   Map<Type, TypeAdapter<CacheItem>>? customAdapters,
   Map<Type, DataSerializer>? customSerializers,
 }) async {
@@ -122,12 +123,14 @@ Future<void> setupDataCacheX({
         typeAdapterRegistry,
         boxName: boxName,
         enableEncryption: enableEncryption,
+        encryptionKey: encryptionKey,
       );
       getIt.registerSingleton<HiveAdapter>(hiveAdapter);
       cacheAdapter = hiveAdapter;
       break;
     case CacheAdapterType.memory:
-      final memoryAdapter = MemoryAdapter(enableEncryption: enableEncryption);
+      final memoryAdapter = MemoryAdapter(
+          enableEncryption: enableEncryption, encryptionKey: encryptionKey);
       getIt.registerSingleton<MemoryAdapter>(memoryAdapter);
       cacheAdapter = memoryAdapter;
       break;
@@ -155,7 +158,9 @@ Future<void> setupDataCacheX({
 
   // Initialize background cleanup
   initializeBackgroundCleanup(
-      adapter: cacheAdapter, frequency: cleanupFrequency);
+    adapter: cacheAdapter,
+    frequency: cleanupFrequency,
+  );
 }
 
 class _CacheItemAdapter<T> extends TypeAdapter<CacheItem<T>> {
