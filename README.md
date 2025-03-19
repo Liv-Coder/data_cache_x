@@ -202,19 +202,72 @@ Future<void> main() async {
 
 ### `DataCacheX`
 
-- `put<T>(String key, T value, {Duration? expiry})`: Stores a value in the cache with an optional expiry duration.
-- `get<T>(String key)`: Retrieves a value from the cache. Returns `null` if the key doesn't exist or the item is expired.
-- `delete(String key)`: Deletes a value from the cache.
-- `clear()`: Clears the entire cache.
-- `containsKey(String key)`: Checks if a key exists in the cache.
+#### Storage Operations
+
+- `Future<void> put<T>(String key, T value, {Duration? expiry, Duration? slidingExpiry})`: 
+  Stores a value in the cache with an optional expiry duration or sliding expiry.
+  - `key`: Unique identifier for the cached item
+  - `value`: The data to cache
+  - `expiry`: Optional fixed expiration duration after which the item is considered expired
+  - `slidingExpiry`: Optional sliding expiration that extends each time the item is accessed
+
+- `Future<T?> get<T>(String key)`: 
+  Retrieves a value from the cache. Returns `null` if the key doesn't exist or the item is expired.
+  - If using sliding expiry, each access extends the expiration time
+
+- `Future<void> delete(String key)`: 
+  Deletes a value from the cache.
+
+- `Future<void> clear()`: 
+  Clears the entire cache.
+
+- `Future<bool> containsKey(String key)`: 
+  Checks if a key exists in the cache and hasn't expired.
+
+#### Cache Invalidation
+
+- `Future<void> invalidate(String key)`: 
+  Explicitly invalidates the cache entry with the specified key.
+
+- `Future<void> invalidateWhere(bool Function(String key, dynamic value) test)`: 
+  Invalidates cache entries that match the given condition.
+  - `test`: Function that takes a key and value, returning true for items to be invalidated
+
+#### Cache Metrics
+
+- `int get hitCount`: 
+  Returns the number of cache hits since the last reset.
+
+- `int get missCount`: 
+  Returns the number of cache misses since the last reset.
+
+- `double get hitRate`: 
+  Returns the ratio of hits to total requests (hits + misses).
+
+- `void resetMetrics()`: 
+  Resets all cache metrics counters to zero.
 
 ### `CacheItem`
 
-- `value`: The actual value to be cached.
-- `expiry`: An optional `DateTime` object representing the expiry date of the cached item.
-- `isExpired`: Returns `true` if the item has expired.
+- `dynamic value`: The actual value to be cached.
+- `DateTime? expiry`: An optional `DateTime` object representing the expiry date of the cached item.
+- `Duration? slidingExpiry`: Optional sliding expiration duration that extends on each access.
+- `bool get isExpired`: Returns `true` if the item has expired.
 
-## Exceptions
+### Cache Adapters
+
+- `CacheAdapterType.hive`: Uses Hive NoSQL database for persistent storage.
+- `CacheAdapterType.memory`: Uses in-memory storage (volatile).
+- `CacheAdapterType.sqlite`: Uses SQLite database for persistent storage.
+- `CacheAdapterType.sharedPreferences`: Uses SharedPreferences for key-value storage.
+
+### Background Cleanup
+
+- `initializeBackgroundCleanup({Duration frequency})`: 
+  Starts a periodic task to clean up expired cache items.
+  - `frequency`: Optional cleanup interval (defaults to 1 hour)
+
+### Exceptions
 
 - `DataCacheXException`: A general exception related to data storage operations.
 - `KeyNotFoundException`: Thrown when a specified key is not found in the cache.
