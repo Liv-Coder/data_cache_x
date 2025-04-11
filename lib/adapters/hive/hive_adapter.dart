@@ -20,11 +20,13 @@ import 'package:data_cache_x/service_locator.dart';
 /// print(item?.value);
 /// ```
 class HiveAdapter implements CacheAdapter {
-  late final Box _box;
+  late Box _box;
   final String _encryptionKey;
+  final String _boxName;
 
   @override
   final bool enableEncryption;
+  bool _isInitialized = false;
 
   /// Creates a new instance of [HiveAdapter].
   ///
@@ -36,9 +38,23 @@ class HiveAdapter implements CacheAdapter {
     this.enableEncryption = false,
     String? encryptionKey,
   })  : _encryptionKey = encryptionKey ?? 'default_secret_key',
-        _box = Hive.box(boxName ?? 'data_cache_x');
+        _boxName = boxName ?? 'data_cache_x';
 
   final TypeAdapterRegistry typeAdapterRegistry;
+
+  /// Initializes the adapter by opening the Hive box.
+  /// This method must be called before using any other methods of this adapter.
+  Future<void> init() async {
+    if (_isInitialized) return;
+
+    if (!Hive.isBoxOpen(_boxName)) {
+      _box = await Hive.openBox(_boxName);
+    } else {
+      _box = Hive.box(_boxName);
+    }
+
+    _isInitialized = true;
+  }
 
   String _aesEncrypt(String data) {
     final key = Key.fromUtf8(_encryptionKey.padRight(32, '0').substring(0, 32));
@@ -59,6 +75,8 @@ class HiveAdapter implements CacheAdapter {
 
   @override
   Future<void> put(String key, CacheItem<dynamic> value) async {
+    if (!_isInitialized) await init();
+
     if (enableEncryption) {
       final encryptedValue = _aesEncrypt(jsonEncode(value.toJson()));
       await _box.put(key, encryptedValue);
@@ -69,6 +87,8 @@ class HiveAdapter implements CacheAdapter {
 
   @override
   Future<CacheItem<dynamic>?> get(String key) async {
+    if (!_isInitialized) await init();
+
     final dynamic storedValue = _box.get(key);
     if (storedValue == null) {
       return null;
@@ -83,21 +103,26 @@ class HiveAdapter implements CacheAdapter {
 
   @override
   Future<void> delete(String key) async {
+    if (!_isInitialized) await init();
     await _box.delete(key);
   }
 
   @override
   Future<void> clear() async {
+    if (!_isInitialized) await init();
     await _box.clear();
   }
 
   @override
   Future<bool> containsKey(String key) async {
+    if (!_isInitialized) await init();
     return _box.containsKey(key);
   }
 
   @override
   Future<List<String>> getKeys({int? limit, int? offset}) async {
+    if (!_isInitialized) await init();
+
     final keys = _box.keys.toList().cast<String>();
     if (limit == null && offset == null) {
       return keys;

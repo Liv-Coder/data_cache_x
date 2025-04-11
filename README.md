@@ -1,6 +1,6 @@
 <p align="center">
-  <img src="https://i.postimg.cc/dQCB3rxM/fbc2d4a9-5805-4368-b160-cc9613eb0a0f.jpg" 
-       alt="data_cache_x logo" 
+  <img src="https://i.postimg.cc/dQCB3rxM/fbc2d4a9-5805-4368-b160-cc9613eb0a0f.jpg"
+       alt="data_cache_x logo"
        style="width: 100%; height: 150; object-fit: cover;" />
 </p>
 
@@ -106,10 +106,15 @@ Then, run `flutter pub get` to install the package.
    // ...
 
    // Initialize background cleanup (call this after setting up the service locator)
-   initializeBackgroundCleanup();
+   // This is automatically done when you call setupDataCacheX()
+   // But you can manually control it if needed:
+   BackgroundCleanup.initializeBackgroundCleanup(
+     adapter: cacheAdapter,
+     frequency: Duration(hours: 1),
+   );
    ```
 
-   This will schedule a periodic task that runs every hour to remove expired items from the cache.
+   This will set up a periodic timer that runs every hour to remove expired items from the cache.
 
 2. **Using a different cache adapter:**
 
@@ -128,7 +133,7 @@ await setupDataCacheX(adapterType: CacheAdapterType.sqlite);
 await setupDataCacheX(adapterType: CacheAdapterType.sharedPreferences);
 ```
 
-3.  **Custom Adapters and Serializers:**
+3. **Custom Adapters and Serializers:**
 
 You can register custom adapters and serializers to handle specific data types:
 
@@ -204,47 +209,49 @@ Future<void> main() async {
 
 #### Storage Operations
 
-- `Future<void> put<T>(String key, T value, {Duration? expiry, Duration? slidingExpiry})`: 
+- `Future<void> put<T>(String key, T value, {Duration? expiry, Duration? slidingExpiry})`:
   Stores a value in the cache with an optional expiry duration or sliding expiry.
+
   - `key`: Unique identifier for the cached item
   - `value`: The data to cache
   - `expiry`: Optional fixed expiration duration after which the item is considered expired
   - `slidingExpiry`: Optional sliding expiration that extends each time the item is accessed
 
-- `Future<T?> get<T>(String key)`: 
+- `Future<T?> get<T>(String key)`:
   Retrieves a value from the cache. Returns `null` if the key doesn't exist or the item is expired.
+
   - If using sliding expiry, each access extends the expiration time
 
-- `Future<void> delete(String key)`: 
+- `Future<void> delete(String key)`:
   Deletes a value from the cache.
 
-- `Future<void> clear()`: 
+- `Future<void> clear()`:
   Clears the entire cache.
 
-- `Future<bool> containsKey(String key)`: 
+- `Future<bool> containsKey(String key)`:
   Checks if a key exists in the cache and hasn't expired.
 
 #### Cache Invalidation
 
-- `Future<void> invalidate(String key)`: 
+- `Future<void> invalidate(String key)`:
   Explicitly invalidates the cache entry with the specified key.
 
-- `Future<void> invalidateWhere(bool Function(String key, dynamic value) test)`: 
+- `Future<void> invalidateWhere(bool Function(String key, dynamic value) test)`:
   Invalidates cache entries that match the given condition.
   - `test`: Function that takes a key and value, returning true for items to be invalidated
 
 #### Cache Metrics
 
-- `int get hitCount`: 
+- `int get hitCount`:
   Returns the number of cache hits since the last reset.
 
-- `int get missCount`: 
+- `int get missCount`:
   Returns the number of cache misses since the last reset.
 
-- `double get hitRate`: 
+- `double get hitRate`:
   Returns the ratio of hits to total requests (hits + misses).
 
-- `void resetMetrics()`: 
+- `void resetMetrics()`:
   Resets all cache metrics counters to zero.
 
 ### `CacheItem`
@@ -263,9 +270,17 @@ Future<void> main() async {
 
 ### Background Cleanup
 
-- `initializeBackgroundCleanup({Duration frequency})`: 
-  Starts a periodic task to clean up expired cache items.
+- `BackgroundCleanup.initializeBackgroundCleanup({required CacheAdapter adapter, Duration? frequency})`:
+  Starts a periodic timer to clean up expired cache items.
+
+  - `adapter`: The cache adapter to use for cleanup
   - `frequency`: Optional cleanup interval (defaults to 1 hour)
+
+- `BackgroundCleanup.stopBackgroundCleanup()`:
+  Stops the background cleanup process.
+
+- `BackgroundCleanup.performCleanup(CacheAdapter cacheAdapter)`:
+  Manually triggers a cleanup operation.
 
 ### Exceptions
 

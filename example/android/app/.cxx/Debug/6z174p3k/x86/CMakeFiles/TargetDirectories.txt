@@ -1,0 +1,2 @@
+D:/DevGen/data_cache_x/example/android/app/.cxx/Debug/6z174p3k/x86/CMakeFiles/edit_cache.dir
+D:/DevGen/data_cache_x/example/android/app/.cxx/Debug/6z174p3k/x86/CMakeFiles/rebuild_cache.dir

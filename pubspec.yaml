@@ -1,6 +1,6 @@
 name: data_cache_x
 description: "A Flutter package for efficient offline data caching and synchronization."
-version: 0.1.4
+version: 0.1.5
 
 homepage: https://github.com/Liv-Coder
 repository: https://github.com/Liv-Coder/data_cache_x
@@ -15,10 +15,10 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   get_it: ^8.0.3
-  workmanager: ^0.5.2
+  # workmanager dependency removed due to compatibility issues with newer Flutter versions
   logging: ^1.3.0
   sqflite: ^2.4.2
-  shared_preferences: ^2.5.2
+  shared_preferences: ^2.5.3
   path: ^1.9.1
   encrypt: ^5.0.3
 

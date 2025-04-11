@@ -7,7 +7,7 @@ import 'package:data_cache_x/core/data_cache_x.dart';
 import 'package:data_cache_x/models/cache_item.dart';
 import 'package:data_cache_x/serializers/data_serializer.dart';
 import 'package:data_cache_x/serializers/json_data_serializer.dart';
-import 'package:data_cache_x/utils/background_cleanup.dart';
+import 'utils/background_cleanup.dart';
 import 'package:get_it/get_it.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -131,77 +131,109 @@ Future<void> setupDataCacheX({
   }
 
   // Register default cache item adapters
+  // First register the value adapters
+  final stringAdapter = JsonTypeAdapter<String>(
+      serializer: JsonDataSerializer<String>(), typeId: 1);
+  typeAdapterRegistry.registerAdapter<String>(stringAdapter, typeId: 1);
+
+  // Then create and register the cache item adapters
+  final stringCacheItemAdapter =
+      _CacheItemAdapter<String>(typeId: 1, valueAdapter: stringAdapter);
   typeAdapterRegistry.registerAdapter<String>(
-    JsonTypeAdapter<String>(
-        serializer: JsonDataSerializer<String>(), typeId: 1),
+    stringAdapter,
     typeId: 1,
-    cacheItemAdapter: _CacheItemAdapter<String>(
-        typeId: 1, valueAdapter: typeAdapterRegistry.getValueAdapter<String>()),
+    cacheItemAdapter: stringCacheItemAdapter,
   );
+
   if (adapterType == CacheAdapterType.hive) {
-    Hive.registerAdapter(_CacheItemAdapter<String>(
-        typeId: 1,
-        valueAdapter: typeAdapterRegistry.getValueAdapter<String>()));
+    Hive.registerAdapter(stringCacheItemAdapter);
   }
+  // Register int adapter
+  final intAdapter =
+      JsonTypeAdapter<int>(serializer: JsonDataSerializer<int>(), typeId: 2);
+  typeAdapterRegistry.registerAdapter<int>(intAdapter, typeId: 2);
+
+  // Then create and register the cache item adapter
+  final intCacheItemAdapter =
+      _CacheItemAdapter<int>(typeId: 2, valueAdapter: intAdapter);
   typeAdapterRegistry.registerAdapter<int>(
-    JsonTypeAdapter<int>(serializer: JsonDataSerializer<int>(), typeId: 2),
+    intAdapter,
     typeId: 2,
-    cacheItemAdapter: _CacheItemAdapter<int>(
-        typeId: 2, valueAdapter: typeAdapterRegistry.getValueAdapter<int>()),
+    cacheItemAdapter: intCacheItemAdapter,
   );
+
   if (adapterType == CacheAdapterType.hive) {
-    Hive.registerAdapter(_CacheItemAdapter<int>(
-        typeId: 2, valueAdapter: typeAdapterRegistry.getValueAdapter<int>()));
+    Hive.registerAdapter(intCacheItemAdapter);
   }
+  // Register double adapter
+  final doubleAdapter = JsonTypeAdapter<double>(
+      serializer: JsonDataSerializer<double>(), typeId: 3);
+  typeAdapterRegistry.registerAdapter<double>(doubleAdapter, typeId: 3);
+
+  // Then create and register the cache item adapter
+  final doubleCacheItemAdapter =
+      _CacheItemAdapter<double>(typeId: 3, valueAdapter: doubleAdapter);
   typeAdapterRegistry.registerAdapter<double>(
-    JsonTypeAdapter<double>(
-        serializer: JsonDataSerializer<double>(), typeId: 3),
+    doubleAdapter,
     typeId: 3,
-    cacheItemAdapter: _CacheItemAdapter<double>(
-        typeId: 3, valueAdapter: typeAdapterRegistry.getValueAdapter<double>()),
+    cacheItemAdapter: doubleCacheItemAdapter,
   );
+
   if (adapterType == CacheAdapterType.hive) {
-    Hive.registerAdapter(_CacheItemAdapter<double>(
-        typeId: 3,
-        valueAdapter: typeAdapterRegistry.getValueAdapter<double>()));
+    Hive.registerAdapter(doubleCacheItemAdapter);
   }
+  // Register bool adapter
+  final boolAdapter =
+      JsonTypeAdapter<bool>(serializer: JsonDataSerializer<bool>(), typeId: 4);
+  typeAdapterRegistry.registerAdapter<bool>(boolAdapter, typeId: 4);
+
+  // Then create and register the cache item adapter
+  final boolCacheItemAdapter =
+      _CacheItemAdapter<bool>(typeId: 4, valueAdapter: boolAdapter);
   typeAdapterRegistry.registerAdapter<bool>(
-    JsonTypeAdapter<bool>(serializer: JsonDataSerializer<bool>(), typeId: 4),
+    boolAdapter,
     typeId: 4,
-    cacheItemAdapter: _CacheItemAdapter<bool>(
-        typeId: 4, valueAdapter: typeAdapterRegistry.getValueAdapter<bool>()),
+    cacheItemAdapter: boolCacheItemAdapter,
   );
+
   if (adapterType == CacheAdapterType.hive) {
-    Hive.registerAdapter(_CacheItemAdapter<bool>(
-        typeId: 4, valueAdapter: typeAdapterRegistry.getValueAdapter<bool>()));
+    Hive.registerAdapter(boolCacheItemAdapter);
   }
+  // Register List<String> adapter
+  final listStringAdapter = JsonTypeAdapter<List<String>>(
+      serializer: JsonDataSerializer<List<String>>(), typeId: 5);
+  typeAdapterRegistry.registerAdapter<List<String>>(listStringAdapter,
+      typeId: 5);
+
+  // Then create and register the cache item adapter
+  final listStringCacheItemAdapter = _CacheItemAdapter<List<String>>(
+      typeId: 5, valueAdapter: listStringAdapter);
   typeAdapterRegistry.registerAdapter<List<String>>(
-    JsonTypeAdapter<List<String>>(
-        serializer: JsonDataSerializer<List<String>>(), typeId: 5),
+    listStringAdapter,
     typeId: 5,
-    cacheItemAdapter: _CacheItemAdapter<List<String>>(
-        typeId: 5,
-        valueAdapter: typeAdapterRegistry.getValueAdapter<List<String>>()),
+    cacheItemAdapter: listStringCacheItemAdapter,
   );
+
   if (adapterType == CacheAdapterType.hive) {
-    Hive.registerAdapter(_CacheItemAdapter<List<String>>(
-        typeId: 5,
-        valueAdapter: typeAdapterRegistry.getValueAdapter<List<String>>()));
+    Hive.registerAdapter(listStringCacheItemAdapter);
   }
+  // Register Map<String, dynamic> adapter
+  final mapAdapter = JsonTypeAdapter<Map<String, dynamic>>(
+      serializer: JsonDataSerializer<Map<String, dynamic>>(), typeId: 6);
+  typeAdapterRegistry.registerAdapter<Map<String, dynamic>>(mapAdapter,
+      typeId: 6);
+
+  // Then create and register the cache item adapter
+  final mapCacheItemAdapter = _CacheItemAdapter<Map<String, dynamic>>(
+      typeId: 6, valueAdapter: mapAdapter);
   typeAdapterRegistry.registerAdapter<Map<String, dynamic>>(
-    JsonTypeAdapter<Map<String, dynamic>>(
-        serializer: JsonDataSerializer<Map<String, dynamic>>(), typeId: 6),
+    mapAdapter,
     typeId: 6,
-    cacheItemAdapter: _CacheItemAdapter<Map<String, dynamic>>(
-        typeId: 6,
-        valueAdapter:
-            typeAdapterRegistry.getValueAdapter<Map<String, dynamic>>()),
+    cacheItemAdapter: mapCacheItemAdapter,
   );
+
   if (adapterType == CacheAdapterType.hive) {
-    Hive.registerAdapter(_CacheItemAdapter<Map<String, dynamic>>(
-        typeId: 6,
-        valueAdapter:
-            typeAdapterRegistry.getValueAdapter<Map<String, dynamic>>()));
+    Hive.registerAdapter(mapCacheItemAdapter);
   }
 
   // Register custom serializers or default if none provided
@@ -233,10 +265,16 @@ Future<void> setupDataCacheX({
           enableEncryption: enableEncryption,
           encryptionKey: encryptionKey,
         );
+        // Initialize the adapter by opening the Hive box
+        await hiveAdapter.init();
         getIt.registerSingleton<HiveAdapter>(hiveAdapter);
         cacheAdapter = hiveAdapter;
       } else {
         cacheAdapter = getIt<HiveAdapter>();
+        // Ensure the adapter is initialized
+        if (cacheAdapter is HiveAdapter) {
+          await (cacheAdapter).init();
+        }
       }
       break;
     case CacheAdapterType.memory:
@@ -282,7 +320,7 @@ Future<void> setupDataCacheX({
   getIt.registerSingleton<DataCacheX>(DataCacheX(cacheAdapter));
 
   // Initialize background cleanup
-  initializeBackgroundCleanup(
+  BackgroundCleanup.initializeBackgroundCleanup(
     adapter: cacheAdapter,
     frequency: cleanupFrequency,
   );
@@ -291,7 +329,7 @@ Future<void> setupDataCacheX({
 class _CacheItemAdapter<T> extends TypeAdapter<CacheItem<T>> {
   @override
   final int typeId;
-  final TypeAdapter<T>? valueAdapter;
+  final TypeAdapter? valueAdapter;
 
   _CacheItemAdapter({required this.typeId, required this.valueAdapter});
 
@@ -301,8 +339,16 @@ class _CacheItemAdapter<T> extends TypeAdapter<CacheItem<T>> {
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
+
+    dynamic value;
+    if (valueAdapter != null) {
+      value = valueAdapter!.read(reader);
+    } else {
+      value = fields[0];
+    }
+
     return CacheItem<T>(
-      value: valueAdapter != null ? valueAdapter!.read(reader) : fields[0] as T,
+      value: value as T,
       expiry: fields[1] as DateTime?,
     );
   }
