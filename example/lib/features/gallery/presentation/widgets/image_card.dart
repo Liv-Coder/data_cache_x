@@ -20,122 +20,135 @@ class ImageCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              AspectRatio(
-                aspectRatio: 1,
-                child: Image.network(
-                  image.url,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey.shade200,
-                      child: const Center(
-                        child: Icon(
-                          Icons.image_not_supported_outlined,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      image.isFavorite ? Ionicons.star : Ionicons.star_outline,
-                      color: image.isFavorite ? Colors.amber : Colors.white,
-                      size: 20,
-                    ),
-                    onPressed: onFavoriteToggle,
-                    tooltip: 'Toggle Favorite',
-                    constraints: const BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
-                    ),
-                    padding: const EdgeInsets.all(4),
-                    iconSize: 20,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 260),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
               children: [
-                Text(
-                  image.title,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _formatDate(image.uploadDate),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onBackground
-                                  .withOpacity(0.6),
-                            ),
-                      ),
-                    ),
-                    Text(
-                      _formatBytes(image.size),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onBackground
-                                .withOpacity(0.6),
+                AspectRatio(
+                  aspectRatio: 1.2,
+                  child: Image.network(
+                    image.url,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        color: Colors.grey.shade200,
+                        child: const Center(
+                          child: Icon(
+                            Icons.image_not_supported_outlined,
+                            color: Colors.grey,
                           ),
-                    ),
-                  ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${image.width}x${image.height}',
-                      style: Theme.of(context).textTheme.bodySmall,
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withAlpha(153),
+                      borderRadius: BorderRadius.circular(16),
                     ),
-                    IconButton(
-                      icon: const Icon(
-                        Ionicons.trash_outline,
-                        size: 16,
+                    child: IconButton(
+                      icon: Icon(
+                        image.isFavorite
+                            ? Ionicons.star
+                            : Ionicons.star_outline,
+                        color: image.isFavorite ? Colors.amber : Colors.white,
+                        size: 20,
                       ),
-                      onPressed: onDelete,
-                      tooltip: 'Delete',
+                      onPressed: onFavoriteToggle,
+                      tooltip: 'Toggle Favorite',
                       constraints: const BoxConstraints(
                         minWidth: 32,
                         minHeight: 32,
                       ),
                       padding: const EdgeInsets.all(4),
-                      iconSize: 16,
+                      iconSize: 20,
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+            Expanded(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: ListView(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  children: [
+                    Text(
+                      image.title,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _formatDate(image.uploadDate),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withAlpha(153),
+                                    ),
+                          ),
+                        ),
+                        Text(
+                          _formatBytes(image.size),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withAlpha(153),
+                                  ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${image.width}x${image.height}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        IconButton(
+                          icon: const Icon(
+                            Ionicons.trash_outline,
+                            size: 16,
+                          ),
+                          onPressed: onDelete,
+                          tooltip: 'Delete',
+                          constraints: const BoxConstraints(
+                            minWidth: 32,
+                            minHeight: 32,
+                          ),
+                          padding: const EdgeInsets.all(4),
+                          iconSize: 16,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
