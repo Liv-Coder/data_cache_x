@@ -172,26 +172,26 @@ class _BenchmarkFormState extends State<BenchmarkForm> {
                 _expiry = value;
               });
             },
-            items: [
-              const DropdownMenuItem<Duration?>(
+            items: const [
+              DropdownMenuItem<Duration?>(
                 value: null,
                 child: Text('No expiry'),
               ),
               DropdownMenuItem<Duration?>(
-                value: const Duration(minutes: 5),
-                child: const Text('5 minutes'),
+                value: Duration(minutes: 5),
+                child: Text('5 minutes'),
               ),
               DropdownMenuItem<Duration?>(
-                value: const Duration(minutes: 15),
-                child: const Text('15 minutes'),
+                value: Duration(minutes: 15),
+                child: Text('15 minutes'),
               ),
               DropdownMenuItem<Duration?>(
-                value: const Duration(minutes: 30),
-                child: const Text('30 minutes'),
+                value: Duration(minutes: 30),
+                child: Text('30 minutes'),
               ),
               DropdownMenuItem<Duration?>(
-                value: const Duration(hours: 1),
-                child: const Text('1 hour'),
+                value: Duration(hours: 1),
+                child: Text('1 hour'),
               ),
             ],
           ),
@@ -223,22 +223,22 @@ class _BenchmarkFormState extends State<BenchmarkForm> {
                 });
               }
             },
-            items: [
+            items: const [
               DropdownMenuItem<CachePriority>(
                 value: CachePriority.low,
-                child: const Text('Low'),
+                child: Text('Low'),
               ),
               DropdownMenuItem<CachePriority>(
                 value: CachePriority.normal,
-                child: const Text('Normal'),
+                child: Text('Normal'),
               ),
               DropdownMenuItem<CachePriority>(
                 value: CachePriority.high,
-                child: const Text('High'),
+                child: Text('High'),
               ),
               DropdownMenuItem<CachePriority>(
                 value: CachePriority.critical,
-                child: const Text('Critical'),
+                child: Text('Critical'),
               ),
             ],
           ),
@@ -270,18 +270,18 @@ class _BenchmarkFormState extends State<BenchmarkForm> {
                 });
               }
             },
-            items: [
+            items: const [
               DropdownMenuItem<CompressionMode>(
                 value: CompressionMode.auto,
-                child: const Text('Auto'),
+                child: Text('Auto'),
               ),
               DropdownMenuItem<CompressionMode>(
                 value: CompressionMode.always,
-                child: const Text('Always'),
+                child: Text('Always'),
               ),
               DropdownMenuItem<CompressionMode>(
                 value: CompressionMode.never,
-                child: const Text('Never'),
+                child: Text('Never'),
               ),
             ],
           ),
@@ -308,7 +308,7 @@ class _BenchmarkFormState extends State<BenchmarkForm> {
       priority: _priority,
       compression: _compression,
     );
-    
+
     widget.onRunBenchmark(benchmark);
   }
 }

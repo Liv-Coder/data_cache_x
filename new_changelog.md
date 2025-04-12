@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.6 (Upcoming)
+
+- Completely revamped documentation with comprehensive examples
+- Added detailed API reference in README
+- Enhanced example app (CacheHub) with multiple feature demonstrations:
+  - News Feed: API caching with different policies
+  - Image Gallery: Binary data caching for images
+  - Analytics: Cache performance visualization
+  - Explorer: Browse and manipulate cached data
+  - Adapter Playground: Benchmark different adapters
+  - Settings: Configure cache behavior
+- Improved code quality and organization
+- Fixed minor bugs and improved error handling
+
 ## 0.1.5
 
 - Added comprehensive analytics for cache performance monitoring

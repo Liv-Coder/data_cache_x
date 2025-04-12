@@ -37,7 +37,7 @@ class ClearAllEntriesEvent extends ExplorerEvent {}
 // States
 abstract class ExplorerState extends Equatable {
   const ExplorerState();
-  
+
   @override
   List<Object> get props => [];
 }
@@ -54,7 +54,7 @@ class EntriesLoaded extends ExplorerState {
     required this.entries,
     required this.stats,
   });
-  
+
   @override
   List<Object> get props => [entries, stats];
 }
@@ -67,7 +67,7 @@ class EntryValueLoaded extends ExplorerState {
     required this.key,
     required this.value,
   });
-  
+
   @override
   List<Object> get props => [key, value ?? ''];
 }
@@ -76,7 +76,7 @@ class EntryDeleted extends ExplorerState {
   final String key;
 
   const EntryDeleted(this.key);
-  
+
   @override
   List<Object> get props => [key];
 }
@@ -87,7 +87,7 @@ class ExplorerError extends ExplorerState {
   final String message;
 
   const ExplorerError(this.message);
-  
+
   @override
   List<Object> get props => [message];
 }
@@ -113,7 +113,7 @@ class ExplorerBloc extends Bloc<ExplorerEvent, ExplorerState> {
     try {
       final entries = await _explorerRepository.getAllEntries();
       final stats = await _explorerRepository.getCacheStats();
-      
+
       emit(EntriesLoaded(
         entries: entries,
         stats: stats,
@@ -130,7 +130,7 @@ class ExplorerBloc extends Bloc<ExplorerEvent, ExplorerState> {
     emit(ExplorerLoading());
     try {
       final value = await _explorerRepository.getEntryValue(event.key);
-      
+
       emit(EntryValueLoaded(
         key: event.key,
         value: value,
@@ -147,12 +147,12 @@ class ExplorerBloc extends Bloc<ExplorerEvent, ExplorerState> {
     emit(ExplorerLoading());
     try {
       final success = await _explorerRepository.deleteEntry(event.key);
-      
+
       if (success) {
         emit(EntryDeleted(event.key));
         add(LoadEntriesEvent());
       } else {
-        emit(ExplorerError('Failed to delete entry'));
+        emit(const ExplorerError('Failed to delete entry'));
       }
     } catch (e) {
       emit(ExplorerError('Failed to delete entry: ${e.toString()}'));
@@ -166,12 +166,12 @@ class ExplorerBloc extends Bloc<ExplorerEvent, ExplorerState> {
     emit(ExplorerLoading());
     try {
       final success = await _explorerRepository.clearAll();
-      
+
       if (success) {
         emit(AllEntriesCleared());
         add(LoadEntriesEvent());
       } else {
-        emit(ExplorerError('Failed to clear all entries'));
+        emit(const ExplorerError('Failed to clear all entries'));
       }
     } catch (e) {
       emit(ExplorerError('Failed to clear all entries: ${e.toString()}'));
