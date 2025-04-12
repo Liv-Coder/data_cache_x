@@ -4,26 +4,34 @@
        style="width: 100%; height: 150; object-fit: cover;" />
 </p>
 
-# DataCacheX
+<h1 align="center">DataCacheX</h1>
+<p align="center">A versatile and extensible caching library for Dart and Flutter applications</p>
 
-A versatile and extensible caching library for Dart and Flutter applications.
+<p align="center">
+  <a href="https://pub.dev/packages/data_cache_x">
+    <img src="https://img.shields.io/pub/v/data_cache_x.svg" alt="Pub">
+  </a>
+  <a href="https://github.com/Liv-Coder/data_cache_x/blob/main/LICENSE">
+    <img src="https://img.shields.io/github/license/Liv-Coder/data_cache_x" alt="License: MIT">
+  </a>
+</p>
 
-## Why This Package?
+---
 
-`DataCacheX` is designed to simplify data caching in your Dart and Flutter projects. It provides a flexible and efficient way to store and retrieve data, with support for various storage adapters. Whether you're building a small app or a large-scale application, `DataCacheX` helps you manage your data effectively, reduce network requests, and improve overall performance.
+## 📋 Overview
 
-## Features
+**DataCacheX** is a powerful caching solution designed to simplify data management in your Dart and Flutter applications. It provides a flexible and efficient way to store and retrieve data with support for multiple storage backends, advanced caching policies, and comprehensive analytics.
 
-- **Multi-Adapter Support:** Choose from various storage adapters, including Hive, memory, SQLite, and shared preferences, to suit your specific needs.
-- **Data Caching:** Store and retrieve data of any type with ease.
-- **Dependency Injection:** Utilizes `get_it` for dependency injection, making it easy to swap out different cache adapters and manage dependencies.
-- **Automatic Background Cleanup:** Automatically removes expired items from the cache, ensuring efficient use of storage space.
-- **Customizable Expiry:** Set expiry durations for cached items, allowing fine-grained control over data freshness.
-- **Error Handling:** Includes robust error handling with custom exceptions for various error conditions.
-- **Extensible:** Designed with extensibility in mind, allowing developers to easily add support for other storage adapters and data serializers.
-- **Data Serialization:** Supports custom data serializers, allowing you to store complex data types.
+### Why Choose DataCacheX?
 
-## Installation
+- **Multiple Storage Options**: Choose from memory, Hive, SQLite, or SharedPreferences adapters
+- **Flexible Caching Policies**: Configure expiry, compression, encryption, and priority
+- **Memory Management**: Automatic cleanup and multiple eviction strategies
+- **Performance Analytics**: Track cache performance with built-in metrics
+- **Type Safety**: Full support for generic types and complex data structures
+- **Extensibility**: Easy to extend with custom adapters and serializers
+
+## 🚀 Installation
 
 Add `data_cache_x` to your `pubspec.yaml` file:
 
@@ -32,145 +40,200 @@ dependencies:
   data_cache_x: ^latest_version
 ```
 
-Then, run `flutter pub get` to install the package.
+Then run:
 
-## Usage
+```bash
+flutter pub get
+```
 
-### Basic Usage
+## 🔧 Quick Start
 
-1. **Initialize the package:**
-
-   ```dart
-   import 'package:data_cache_x/data_cache_x.dart';
-   import 'package:data_cache_x/service_locator.dart';
-
-   Future<void> main() async {
-     // Initialize the service locator
-     await setupDataCacheX();
-
-     // Get the DataCacheX instance
-     final dataCache = getIt<DataCacheX>();
-
-     // ...
-   }
-   ```
-
-2. **Store data:**
-
-   ```dart
-   // Store a string with an expiry time of 1 hour
-   await dataCache.put('myKey', 'myValue', expiry: Duration(hours: 1));
-
-   // Store an integer without an expiry time
-   await dataCache.put('anotherKey', 42);
-   ```
-
-3. **Retrieve data:**
-
-   ```dart
-   // Retrieve the string value
-   final myValue = await dataCache.get<String>('myKey');
-   print(myValue); // Output: myValue (if not expired)
-
-   // Retrieve the integer value
-   final anotherValue = await dataCache.get<int>('anotherKey');
-   print(anotherValue); // Output: 42
-   ```
-
-4. **Delete data:**
-
-   ```dart
-   await dataCache.delete('myKey');
-   ```
-
-5. **Clear the cache:**
-
-   ```dart
-   await dataCache.clear();
-   ```
-
-6. **Check if a key exists:**
-
-   ```dart
-   final exists = await dataCache.containsKey('myKey');
-   print(exists); // Output: true or false
-   ```
-
-7. **Batch Operations:**
-
-   ```dart
-   // Store multiple values at once
-   await dataCache.putAll({
-     'key1': 'value1',
-     'key2': 42,
-     'key3': true,
-   }, expiry: Duration(hours: 1));
-
-   // Retrieve multiple values at once
-   final values = await dataCache.getAll<dynamic>(['key1', 'key2', 'key3']);
-   print(values); // Output: {'key1': 'value1', 'key2': 42, 'key3': true}
-
-   // Delete multiple values at once
-   await dataCache.deleteAll(['key1', 'key2', 'key3']);
-   ```
-
-8. **Cache Policies:**
-
-   ```dart
-   import 'package:data_cache_x/data_cache_x.dart';
-
-   // Use predefined cache policies
-   await dataCache.put('sensitive-data', userData,
-       policy: CachePolicy.encrypted(expiry: Duration(days: 7)));
-
-   await dataCache.put('temporary-data', tempData,
-       policy: CachePolicy.temporary);
-
-   // Create custom cache policies
-   final myPolicy = CachePolicy(
-     expiry: Duration(hours: 24),
-     staleTime: Duration(minutes: 30),
-     slidingExpiry: Duration(hours: 2),
-     priority: CachePriority.high,
-     refreshStrategy: RefreshStrategy.backgroundRefresh,
-     maxSize: 1024 * 10, // 10 KB max size
-     encrypt: true,
-   );
-
-   await dataCache.put('custom-policy-data', myData, policy: myPolicy);
-   ```
-
-9. **Auto-Refresh with Callbacks:**
-
-   ```dart
-   // Single item refresh
-   final data = await dataCache.get<MyData>('my-data',
-     refreshCallback: () => fetchFreshDataFromApi(),
-     policy: CachePolicy(
-       staleTime: Duration(minutes: 5),
-       refreshStrategy: RefreshStrategy.backgroundRefresh,
-     ),
-   );
-
-   // Multiple items refresh
-   final allData = await dataCache.getAll<MyData>(['item1', 'item2', 'item3'],
-     refreshCallbacks: {
-       'item1': () => fetchItem1FromApi(),
-       'item2': () => fetchItem2FromApi(),
-       'item3': () => fetchItem3FromApi(),
-     },
-     policy: CachePolicy(
-       staleTime: Duration(minutes: 5),
-       refreshStrategy: RefreshStrategy.backgroundRefresh,
-     ),
-   );
-   ```
-
-10. **Cache Analytics:**
+### Initialize the Package
 
 ```dart
-// Get basic cache metrics
-print('Hit rate: ${dataCache.hitRate}');
+import 'package:data_cache_x/data_cache_x.dart';
+import 'package:data_cache_x/service_locator.dart';
+
+Future<void> main() async {
+  // Initialize with default settings (Hive adapter)
+  await setupDataCacheX();
+
+  // Get the DataCacheX instance
+  final dataCache = getIt<DataCacheX>();
+
+  // Start using the cache
+  await dataCache.put('greeting', 'Hello, World!');
+  final value = await dataCache.get<String>('greeting');
+  print(value); // Output: Hello, World!
+}
+```
+
+### Choose a Different Adapter
+
+```dart
+// Use memory adapter (volatile, but fast)
+await setupDataCacheX(adapterType: CacheAdapterType.memory);
+
+// Use SQLite adapter (persistent, good for larger datasets)
+await setupDataCacheX(adapterType: CacheAdapterType.sqlite);
+
+// Use SharedPreferences adapter (persistent, simple key-value storage)
+await setupDataCacheX(adapterType: CacheAdapterType.sharedPreferences);
+```
+
+## 📚 Core Features
+
+### Basic Cache Operations
+
+```dart
+// Store values with optional expiry
+await dataCache.put('user_profile', userProfile,
+    expiry: Duration(hours: 24));
+
+// Retrieve values with type safety
+final profile = await dataCache.get<UserProfile>('user_profile');
+
+// Check if a key exists
+final exists = await dataCache.containsKey('user_profile');
+
+// Delete a value
+await dataCache.delete('user_profile');
+
+// Clear the entire cache
+await dataCache.clear();
+```
+
+### Batch Operations
+
+```dart
+// Store multiple values at once
+await dataCache.putAll({
+  'user': currentUser,
+  'settings': appSettings,
+  'theme': currentTheme,
+}, expiry: Duration(days: 7));
+
+// Retrieve multiple values
+final values = await dataCache.getAll<dynamic>([
+  'user', 'settings', 'theme'
+]);
+
+// Delete multiple values
+await dataCache.deleteAll(['user', 'settings', 'theme']);
+```
+
+### Advanced Caching Policies
+
+```dart
+// Create a custom policy
+final myPolicy = CachePolicy(
+  expiry: Duration(hours: 24),         // Fixed expiry time
+  slidingExpiry: Duration(hours: 2),    // Extends on each access
+  staleTime: Duration(minutes: 30),     // Time before refresh
+  priority: CachePriority.high,         // Higher priority in eviction
+  refreshStrategy: RefreshStrategy.backgroundRefresh,
+  maxSize: 1024 * 10,                   // 10 KB max size
+  encrypt: true,                        // Enable encryption
+  compression: CompressionMode.auto,    // Auto-compress if beneficial
+);
+
+// Apply the policy
+await dataCache.put('important_data', data, policy: myPolicy);
+
+// Use predefined policies
+await dataCache.put('sensitive_data', userData,
+    policy: CachePolicy.encrypted(expiry: Duration(days: 7)));
+
+await dataCache.put('temp_data', tempData,
+    policy: CachePolicy.temporary);
+
+await dataCache.put('large_data', largeData,
+    policy: CachePolicy.compressed());
+```
+
+### Auto-Refresh with Callbacks
+
+```dart
+// Get data with auto-refresh when stale
+final userData = await dataCache.get<UserData>('user_data',
+  refreshCallback: () => fetchUserFromApi(),  // Called when data is stale/expired
+  policy: CachePolicy(
+    staleTime: Duration(minutes: 5),
+    refreshStrategy: RefreshStrategy.backgroundRefresh,
+  ),
+);
+
+// Multiple items with different refresh callbacks
+final data = await dataCache.getAll<dynamic>(['users', 'posts', 'comments'],
+  refreshCallbacks: {
+    'users': () => fetchUsersFromApi(),
+    'posts': () => fetchPostsFromApi(),
+    'comments': () => fetchCommentsFromApi(),
+  },
+  policy: CachePolicy(staleTime: Duration(minutes: 10)),
+);
+```
+
+## 🔍 Advanced Features
+
+### Memory Management with Eviction Strategies
+
+```dart
+// Create a cache with LRU (Least Recently Used) eviction
+final lruCache = DataCacheX(
+  cacheAdapter,
+  maxSize: 10 * 1024 * 1024,  // 10 MB max size
+  maxItems: 1000,             // 1000 items max
+  evictionStrategy: EvictionStrategy.lru,
+);
+
+// Other available strategies
+// LFU (Least Frequently Used)
+final lfuCache = DataCacheX(
+  cacheAdapter,
+  evictionStrategy: EvictionStrategy.lfu,
+);
+
+// FIFO (First In, First Out)
+final fifoCache = DataCacheX(
+  cacheAdapter,
+  evictionStrategy: EvictionStrategy.fifo,
+);
+
+// TTL (Time To Live - prioritizes items closest to expiration)
+final ttlCache = DataCacheX(
+  cacheAdapter,
+  evictionStrategy: EvictionStrategy.ttl,
+);
+```
+
+### Data Compression
+
+```dart
+// Create a cache with compression support
+final compressedCache = DataCacheX(
+  cacheAdapter,
+  compressionLevel: 6,  // 1 (fastest) to 9 (most compression)
+);
+
+// Auto compression (only compresses if beneficial)
+await dataCache.put('large_text', largeString,
+    policy: CachePolicy(compression: CompressionMode.auto));
+
+// Always compress
+await dataCache.put('always_compressed', value,
+    policy: CachePolicy(compression: CompressionMode.always));
+
+// Never compress
+await dataCache.put('never_compressed', value,
+    policy: CachePolicy(compression: CompressionMode.never));
+```
+
+### Cache Analytics
+
+```dart
+// Get basic metrics
+print('Hit rate: ${dataCache.hitRate}%');
 print('Total size: ${dataCache.totalSize} bytes');
 print('Average item size: ${dataCache.averageItemSize} bytes');
 
@@ -180,286 +243,138 @@ for (final entry in topKeys) {
   print('${entry.key}: ${entry.value} accesses');
 }
 
-// Get largest items in the cache
+// Get largest items
 final largestItems = dataCache.largestItems;
 for (final entry in largestItems) {
   print('${entry.key}: ${entry.value} bytes');
 }
 
-// Get a complete analytics summary
+// Get complete analytics summary
 final summary = dataCache.getAnalyticsSummary();
 print(summary);
 
-// Reset analytics
+// Reset metrics
 dataCache.resetMetrics();
 ```
 
-11. **Memory Management with Eviction Strategies:**
+### Background Cleanup
 
 ```dart
-// Create a cache with LRU (Least Recently Used) eviction strategy
-final dataCache = DataCacheX(
-  cacheAdapter,
-  maxSize: 10 * 1024 * 1024, // 10 MB max size
-  maxItems: 1000, // 1000 items max
-  evictionStrategy: EvictionStrategy.lru,
+import 'package:data_cache_x/utils/background_cleanup.dart';
+
+// Initialize background cleanup (automatically done by setupDataCacheX)
+// But you can manually control it if needed:
+BackgroundCleanup.initializeBackgroundCleanup(
+  adapter: cacheAdapter,
+  frequency: Duration(hours: 1),
 );
 
-// Create a cache with LFU (Least Frequently Used) eviction strategy
-final lfuCache = DataCacheX(
-  cacheAdapter,
-  maxSize: 10 * 1024 * 1024,
-  evictionStrategy: EvictionStrategy.lfu,
-);
+// Stop background cleanup
+BackgroundCleanup.stopBackgroundCleanup();
 
-// Create a cache with FIFO (First In, First Out) eviction strategy
-final fifoCache = DataCacheX(
-  cacheAdapter,
-  maxItems: 500,
-  evictionStrategy: EvictionStrategy.fifo,
-);
-
-// Create a cache with TTL (Time To Live) eviction strategy
-// This strategy evicts items closest to expiration first
-final ttlCache = DataCacheX(
-  cacheAdapter,
-  maxSize: 5 * 1024 * 1024,
-  evictionStrategy: EvictionStrategy.ttl,
-);
-
-// Items with higher priority are less likely to be evicted
-await dataCache.put('important-data', value,
-    policy: CachePolicy(priority: CachePriority.high));
-
-await dataCache.put('critical-data', value,
-    policy: CachePolicy(priority: CachePriority.critical));
+// Manually trigger cleanup
+BackgroundCleanup.performCleanup(cacheAdapter);
 ```
 
-12. **Data Compression:**
+### Custom Adapters and Serializers
 
 ```dart
-// Create a cache with compression support
-final dataCache = DataCacheX(
-  cacheAdapter,
-  compressionLevel: 6, // 1 (fastest) to 9 (most compression)
-);
-
-// Use automatic compression (only compresses if beneficial)
-await dataCache.put('large-text', largeString,
-    policy: CachePolicy(compression: CompressionMode.auto));
-
-// Always compress the data
-await dataCache.put('always-compressed', value,
-    policy: CachePolicy(compression: CompressionMode.always));
-
-// Never compress the data
-await dataCache.put('never-compressed', value,
-    policy: CachePolicy(compression: CompressionMode.never));
-
-// Use predefined policies
-await dataCache.put('compressed-data', largeString,
-    policy: CachePolicy.compressed());
-
-// Combine compression with encryption
-await dataCache.put('secure-compressed', sensitiveData,
-    policy: CachePolicy.encrypted(compression: CompressionMode.auto));
-
-// Retrieve compressed data (decompression happens automatically)
-final data = await dataCache.get<String>('compressed-data');
-```
-
-### Advanced Usage
-
-1. **Initialize Background Cleanup:**
-
-   ```dart
-   import 'package:data_cache_x/utils/background_cleanup.dart';
-
-   // ...
-
-   // Initialize background cleanup (call this after setting up the service locator)
-   // This is automatically done when you call setupDataCacheX()
-   // But you can manually control it if needed:
-   BackgroundCleanup.initializeBackgroundCleanup(
-     adapter: cacheAdapter,
-     frequency: Duration(hours: 1),
-   );
-   ```
-
-   This will set up a periodic timer that runs every hour to remove expired items from the cache.
-
-2. **Using a different cache adapter:**
-
-You can choose between different cache adapters during initialization:
-
-```dart
-import 'package:data_cache_x/service_locator.dart';
-
-// Using the memory adapter
-await setupDataCacheX(adapterType: CacheAdapterType.memory);
-
-// Using the SQLite adapter
-await setupDataCacheX(adapterType: CacheAdapterType.sqlite);
-
-// Using the shared preferences adapter
-await setupDataCacheX(adapterType: CacheAdapterType.sharedPreferences);
-```
-
-3. **Custom Adapters and Serializers:**
-
-You can register custom adapters and serializers to handle specific data types:
-
-```dart
-import 'package:data_cache_x/service_locator.dart';
-import 'package:data_cache_x/models/cache_item.dart';
-import 'package:hive/hive.dart';
 import 'package:data_cache_x/serializers/data_serializer.dart';
 import 'dart:convert';
 
-class MyCustomType {
+// Define a custom data type
+class UserProfile {
   final String name;
   final int age;
 
-  MyCustomType({required this.name, required this.age});
+  UserProfile({required this.name, required this.age});
 }
 
-class MyCustomTypeAdapter extends TypeAdapter<CacheItem<MyCustomType>> {
+// Create a serializer for the custom type
+class UserProfileSerializer implements DataSerializer<UserProfile> {
   @override
-  final int typeId = 1;
-
-  @override
-  CacheItem<MyCustomType> read(BinaryReader reader) {
-    final numOfFields = reader.readByte();
-    final fields = <int, dynamic>{
-      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
-    };
-    return CacheItem<MyCustomType>(
-      value: fields[0] as MyCustomType,
-      expiry: fields[1] as DateTime?,
-    );
-  }
-
-  @override
-  void write(BinaryWriter writer, CacheItem<MyCustomType> obj) {
-    writer
-      ..writeByte(2)
-      ..writeByte(0)
-      ..write(obj.value)
-      ..writeByte(1)
-      ..write(obj.expiry);
-  }
-}
-
-class MyCustomTypeSerializer implements DataSerializer<MyCustomType> {
-  @override
-  MyCustomType fromJson(String json) {
+  UserProfile fromJson(String json) {
     final map = jsonDecode(json);
-    return MyCustomType(name: map['name'], age: map['age']);
+    return UserProfile(name: map['name'], age: map['age']);
   }
 
   @override
-  String toJson(MyCustomType value) {
+  String toJson(UserProfile value) {
     return jsonEncode({'name': value.name, 'age': value.age});
   }
 }
 
-Future<void> main() async {
-  await setupDataCacheX(
-    customAdapters: {
-      MyCustomType: MyCustomTypeAdapter(),
-    },
-    customSerializers: {
-      MyCustomType: MyCustomTypeSerializer(),
-    },
-  );
-}
+// Register the custom serializer
+await setupDataCacheX(
+  customSerializers: {
+    UserProfile: UserProfileSerializer(),
+  },
+);
 ```
 
-## API Reference
+## 🧪 Example App
 
-### `DataCacheX`
+The package includes a comprehensive example app (CacheHub) that demonstrates all features:
 
-#### Storage Operations
+- **News Feed**: API caching with different policies
+- **Image Gallery**: Binary data caching for images
+- **Analytics**: Cache performance visualization
+- **Explorer**: Browse and manipulate cached data
+- **Adapter Playground**: Benchmark different adapters
+- **Settings**: Configure cache behavior
 
-- `Future<void> put<T>(String key, T value, {Duration? expiry, Duration? slidingExpiry})`:
-  Stores a value in the cache with an optional expiry duration or sliding expiry.
+To run the example app:
 
-  - `key`: Unique identifier for the cached item
-  - `value`: The data to cache
-  - `expiry`: Optional fixed expiration duration after which the item is considered expired
-  - `slidingExpiry`: Optional sliding expiration that extends each time the item is accessed
+```bash
+cd example
+flutter pub get
+flutter run
+```
 
-- `Future<T?> get<T>(String key)`:
-  Retrieves a value from the cache. Returns `null` if the key doesn't exist or the item is expired.
+## 📘 API Reference
 
-  - If using sliding expiry, each access extends the expiration time
+### DataCacheX Class
 
-- `Future<void> delete(String key)`:
-  Deletes a value from the cache.
-
-- `Future<void> clear()`:
-  Clears the entire cache.
-
-- `Future<bool> containsKey(String key)`:
-  Checks if a key exists in the cache and hasn't expired.
-
-#### Cache Invalidation
-
-- `Future<void> invalidate(String key)`:
-  Explicitly invalidates the cache entry with the specified key.
-
-- `Future<void> invalidateWhere(bool Function(String key, dynamic value) test)`:
-  Invalidates cache entries that match the given condition.
-  - `test`: Function that takes a key and value, returning true for items to be invalidated
-
-#### Cache Metrics
-
-- `int get hitCount`:
-  Returns the number of cache hits since the last reset.
-
-- `int get missCount`:
-  Returns the number of cache misses since the last reset.
-
-- `double get hitRate`:
-  Returns the ratio of hits to total requests (hits + misses).
-
-- `void resetMetrics()`:
-  Resets all cache metrics counters to zero.
-
-### `CacheItem`
-
-- `dynamic value`: The actual value to be cached.
-- `DateTime? expiry`: An optional `DateTime` object representing the expiry date of the cached item.
-- `Duration? slidingExpiry`: Optional sliding expiration duration that extends on each access.
-- `bool get isExpired`: Returns `true` if the item has expired.
+| Method                                                                                                                 | Description                               |
+| ---------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| `Future<void> put<T>(String key, T value, {CachePolicy? policy})`                                                      | Stores a value in the cache               |
+| `Future<T?> get<T>(String key, {Function? refreshCallback, CachePolicy? policy})`                                      | Retrieves a value from the cache          |
+| `Future<void> delete(String key)`                                                                                      | Deletes a value from the cache            |
+| `Future<void> clear()`                                                                                                 | Clears the entire cache                   |
+| `Future<bool> containsKey(String key)`                                                                                 | Checks if a key exists and hasn't expired |
+| `Future<void> putAll(Map<String, dynamic> entries, {CachePolicy? policy})`                                             | Stores multiple values at once            |
+| `Future<Map<String, T?>> getAll<T>(List<String> keys, {Map<String, Function>? refreshCallbacks, CachePolicy? policy})` | Retrieves multiple values at once         |
+| `Future<void> deleteAll(List<String> keys)`                                                                            | Deletes multiple values at once           |
+| `Future<void> invalidate(String key)`                                                                                  | Explicitly invalidates a cache entry      |
+| `Future<void> invalidateWhere(bool Function(String, dynamic) test)`                                                    | Invalidates entries matching a condition  |
 
 ### Cache Adapters
 
-- `CacheAdapterType.hive`: Uses Hive NoSQL database for persistent storage.
-- `CacheAdapterType.memory`: Uses in-memory storage (volatile).
-- `CacheAdapterType.sqlite`: Uses SQLite database for persistent storage.
-- `CacheAdapterType.sharedPreferences`: Uses SharedPreferences for key-value storage.
+- `CacheAdapterType.hive`: Hive NoSQL database (persistent)
+- `CacheAdapterType.memory`: In-memory storage (volatile)
+- `CacheAdapterType.sqlite`: SQLite database (persistent)
+- `CacheAdapterType.sharedPreferences`: SharedPreferences (persistent)
 
-### Background Cleanup
+### Eviction Strategies
 
-- `BackgroundCleanup.initializeBackgroundCleanup({required CacheAdapter adapter, Duration? frequency})`:
-  Starts a periodic timer to clean up expired cache items.
+- `EvictionStrategy.lru`: Least Recently Used
+- `EvictionStrategy.lfu`: Least Frequently Used
+- `EvictionStrategy.fifo`: First In, First Out
+- `EvictionStrategy.ttl`: Time To Live (expiry-based)
 
-  - `adapter`: The cache adapter to use for cleanup
-  - `frequency`: Optional cleanup interval (defaults to 1 hour)
+### Cache Priorities
 
-- `BackgroundCleanup.stopBackgroundCleanup()`:
-  Stops the background cleanup process.
+- `CachePriority.low`: Evicted first
+- `CachePriority.normal`: Default priority
+- `CachePriority.high`: Higher retention priority
+- `CachePriority.critical`: Evicted last
 
-- `BackgroundCleanup.performCleanup(CacheAdapter cacheAdapter)`:
-  Manually triggers a cleanup operation.
+### Compression Modes
 
-### Exceptions
+- `CompressionMode.auto`: Compress only if beneficial
+- `CompressionMode.always`: Always compress
+- `CompressionMode.never`: Never compress
 
-- `DataCacheXException`: A general exception related to data storage operations.
-- `KeyNotFoundException`: Thrown when a specified key is not found in the cache.
-- `DataTypeMismatchException`: Thrown when there is a mismatch between the expected data type and the actual data type.
-- `StorageException`: Thrown when there is an error related to the underlying storage mechanism.
-- `CacheException`: A general exception related to cache operations.
-- `AdapterNotFoundException`: Thrown when no adapter is registered for a given type.
-- `SerializerNotFoundException`: Thrown when no serializer is registered for a given type.
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
