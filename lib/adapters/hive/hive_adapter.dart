@@ -133,4 +133,69 @@ class HiveAdapter implements CacheAdapter {
 
     return keys.skip(startIndex).take(endIndex - startIndex).toList();
   }
+
+  @override
+  Future<void> putAll(Map<String, CacheItem<dynamic>> entries) async {
+    if (!_isInitialized) await init();
+
+    final Map<String, dynamic> boxEntries = {};
+
+    for (final entry in entries.entries) {
+      if (enableEncryption) {
+        boxEntries[entry.key] = _aesEncrypt(jsonEncode(entry.value.toJson()));
+      } else {
+        boxEntries[entry.key] = entry.value;
+      }
+    }
+
+    await _box.putAll(boxEntries);
+  }
+
+  @override
+  Future<Map<String, CacheItem<dynamic>>> getAll(List<String> keys) async {
+    if (!_isInitialized) await init();
+
+    final result = <String, CacheItem<dynamic>>{};
+
+    // Hive doesn't have a native getAll method, so we need to get each key individually
+    // but we can optimize by doing it in a single transaction
+    for (final key in keys) {
+      if (_box.containsKey(key)) {
+        final dynamic storedValue = _box.get(key);
+
+        if (storedValue == null) continue;
+
+        if (enableEncryption) {
+          final decryptedValue = _aesDecrypt(storedValue);
+          result[key] = CacheItem.fromJson(jsonDecode(decryptedValue));
+        } else {
+          result[key] = storedValue as CacheItem<dynamic>;
+        }
+      }
+    }
+
+    return result;
+  }
+
+  @override
+  Future<void> deleteAll(List<String> keys) async {
+    if (!_isInitialized) await init();
+
+    // Hive doesn't have a native deleteAll method, so we need to delete each key individually
+    for (final key in keys) {
+      await _box.delete(key);
+    }
+  }
+
+  @override
+  Future<Map<String, bool>> containsKeys(List<String> keys) async {
+    if (!_isInitialized) await init();
+
+    final result = <String, bool>{};
+    for (final key in keys) {
+      result[key] = _box.containsKey(key);
+    }
+
+    return result;
+  }
 }

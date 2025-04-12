@@ -114,4 +114,83 @@ class SharedPreferencesAdapter implements CacheAdapter {
 
     return filteredKeys.skip(startIndex).take(endIndex - startIndex).toList();
   }
+
+  @override
+  Future<void> putAll(Map<String, CacheItem<dynamic>> entries) async {
+    final p = await prefs;
+    final Map<String, String> stringEntries = {};
+
+    for (final entry in entries.entries) {
+      final key = _getKey(entry.key);
+      final item = entry.value;
+      final Map<String, dynamic> jsonMap = {
+        'value': item.value,
+        'expiry': item.expiry?.millisecondsSinceEpoch,
+      };
+
+      String jsonString = jsonEncode(jsonMap);
+      if (enableEncryption) {
+        jsonString = _aesEncrypt(jsonString);
+      }
+
+      stringEntries[key] = jsonString;
+    }
+
+    await p.setString(_getKey('batch_temp'), 'temp');
+    for (final entry in stringEntries.entries) {
+      await p.setString(entry.key, entry.value);
+    }
+    await p.remove(_getKey('batch_temp'));
+  }
+
+  @override
+  Future<Map<String, CacheItem<dynamic>>> getAll(List<String> keys) async {
+    final p = await prefs;
+    final result = <String, CacheItem<dynamic>>{};
+
+    for (final key in keys) {
+      final prefKey = _getKey(key);
+      if (p.containsKey(prefKey)) {
+        final String? jsonString = p.getString(prefKey);
+        if (jsonString == null) continue;
+
+        Map<String, dynamic> jsonMap;
+        if (enableEncryption) {
+          final decryptedValue = _aesDecrypt(jsonString);
+          jsonMap = jsonDecode(decryptedValue);
+        } else {
+          jsonMap = jsonDecode(jsonString);
+        }
+
+        result[key] = CacheItem<dynamic>(
+          value: jsonMap['value'],
+          expiry: jsonMap['expiry'] != null
+              ? DateTime.fromMillisecondsSinceEpoch(jsonMap['expiry'] as int)
+              : null,
+        );
+      }
+    }
+
+    return result;
+  }
+
+  @override
+  Future<void> deleteAll(List<String> keys) async {
+    final p = await prefs;
+    for (final key in keys) {
+      await p.remove(_getKey(key));
+    }
+  }
+
+  @override
+  Future<Map<String, bool>> containsKeys(List<String> keys) async {
+    final p = await prefs;
+    final result = <String, bool>{};
+
+    for (final key in keys) {
+      result[key] = p.containsKey(_getKey(key));
+    }
+
+    return result;
+  }
 }

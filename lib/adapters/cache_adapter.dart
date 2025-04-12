@@ -12,6 +12,19 @@ abstract class CacheAdapter {
   /// Throws a [CacheException] if there is an error storing the data.
   Future<void> put(String key, CacheItem<dynamic> value);
 
+  /// Stores multiple values in the cache with the given keys.
+  ///
+  /// Each value is wrapped in a [CacheItem] object, which allows for optional expiry.
+  ///
+  /// Throws a [CacheException] if there is an error storing the data.
+  Future<void> putAll(Map<String, CacheItem<dynamic>> entries) async {
+    // Default implementation that calls put for each entry
+    // Subclasses should override this with a more efficient implementation if possible
+    for (final entry in entries.entries) {
+      await put(entry.key, entry.value);
+    }
+  }
+
   /// Retrieves the [CacheItem] associated with the given [key].
   ///
   /// Returns `null` if no value is found for the given [key].
@@ -19,10 +32,40 @@ abstract class CacheAdapter {
   /// Throws a [CacheException] if there is an error retrieving the data.
   Future<CacheItem<dynamic>?> get(String key);
 
+  /// Retrieves multiple [CacheItem]s associated with the given [keys].
+  ///
+  /// Returns a map where the keys are the original keys and the values are the retrieved [CacheItem]s.
+  /// If a key is not found in the cache, it will not be included in the returned map.
+  ///
+  /// Throws a [CacheException] if there is an error retrieving the data.
+  Future<Map<String, CacheItem<dynamic>>> getAll(List<String> keys) async {
+    // Default implementation that calls get for each key
+    // Subclasses should override this with a more efficient implementation if possible
+    final result = <String, CacheItem<dynamic>>{};
+    for (final key in keys) {
+      final value = await get(key);
+      if (value != null) {
+        result[key] = value;
+      }
+    }
+    return result;
+  }
+
   /// Deletes the value associated with the given [key].
   ///
   /// Throws a [CacheException] if there is an error deleting the data.
   Future<void> delete(String key);
+
+  /// Deletes multiple values associated with the given [keys].
+  ///
+  /// Throws a [CacheException] if there is an error deleting the data.
+  Future<void> deleteAll(List<String> keys) async {
+    // Default implementation that calls delete for each key
+    // Subclasses should override this with a more efficient implementation if possible
+    for (final key in keys) {
+      await delete(key);
+    }
+  }
 
   /// Clears all data from the cache.
   ///
@@ -33,6 +76,22 @@ abstract class CacheAdapter {
   ///
   /// Returns `true` if the cache contains the key, `false` otherwise.
   Future<bool> containsKey(String key);
+
+  /// Checks if the cache contains values associated with all the given [keys].
+  ///
+  /// Returns a map where the keys are the original keys and the values are booleans
+  /// indicating whether the key exists in the cache.
+  ///
+  /// Throws a [CacheException] if there is an error checking the keys.
+  Future<Map<String, bool>> containsKeys(List<String> keys) async {
+    // Default implementation that calls containsKey for each key
+    // Subclasses should override this with a more efficient implementation if possible
+    final result = <String, bool>{};
+    for (final key in keys) {
+      result[key] = await containsKey(key);
+    }
+    return result;
+  }
 
   /// Returns a list of all keys in the cache.
   ///

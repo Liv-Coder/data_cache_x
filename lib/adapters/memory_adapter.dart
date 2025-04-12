@@ -95,4 +95,56 @@ class MemoryAdapter implements CacheAdapter {
 
     return keys.skip(startIndex).take(endIndex - startIndex).toList();
   }
+
+  @override
+  Future<void> putAll(Map<String, CacheItem<dynamic>> entries) async {
+    for (final entry in entries.entries) {
+      if (enableEncryption) {
+        final encryptedValue = _aesEncrypt(jsonEncode(entry.value.toJson()));
+        _cache[entry.key] = encryptedValue;
+      } else {
+        _cache[entry.key] = entry.value;
+      }
+    }
+  }
+
+  @override
+  Future<Map<String, CacheItem<dynamic>>> getAll(List<String> keys) async {
+    final result = <String, CacheItem<dynamic>>{};
+
+    for (final key in keys) {
+      if (_cache.containsKey(key)) {
+        final dynamic storedValue = _cache[key];
+
+        if (storedValue == null) continue;
+
+        if (enableEncryption) {
+          final decryptedValue = _aesDecrypt(storedValue);
+          result[key] = CacheItem.fromJson(jsonDecode(decryptedValue));
+        } else {
+          result[key] = storedValue as CacheItem<dynamic>;
+        }
+      }
+    }
+
+    return result;
+  }
+
+  @override
+  Future<void> deleteAll(List<String> keys) async {
+    for (final key in keys) {
+      _cache.remove(key);
+    }
+  }
+
+  @override
+  Future<Map<String, bool>> containsKeys(List<String> keys) async {
+    final result = <String, bool>{};
+
+    for (final key in keys) {
+      result[key] = _cache.containsKey(key);
+    }
+
+    return result;
+  }
 }

@@ -96,6 +96,178 @@ Then, run `flutter pub get` to install the package.
    print(exists); // Output: true or false
    ```
 
+7. **Batch Operations:**
+
+   ```dart
+   // Store multiple values at once
+   await dataCache.putAll({
+     'key1': 'value1',
+     'key2': 42,
+     'key3': true,
+   }, expiry: Duration(hours: 1));
+
+   // Retrieve multiple values at once
+   final values = await dataCache.getAll<dynamic>(['key1', 'key2', 'key3']);
+   print(values); // Output: {'key1': 'value1', 'key2': 42, 'key3': true}
+
+   // Delete multiple values at once
+   await dataCache.deleteAll(['key1', 'key2', 'key3']);
+   ```
+
+8. **Cache Policies:**
+
+   ```dart
+   import 'package:data_cache_x/data_cache_x.dart';
+
+   // Use predefined cache policies
+   await dataCache.put('sensitive-data', userData,
+       policy: CachePolicy.encrypted(expiry: Duration(days: 7)));
+
+   await dataCache.put('temporary-data', tempData,
+       policy: CachePolicy.temporary);
+
+   // Create custom cache policies
+   final myPolicy = CachePolicy(
+     expiry: Duration(hours: 24),
+     staleTime: Duration(minutes: 30),
+     slidingExpiry: Duration(hours: 2),
+     priority: CachePriority.high,
+     refreshStrategy: RefreshStrategy.backgroundRefresh,
+     maxSize: 1024 * 10, // 10 KB max size
+     encrypt: true,
+   );
+
+   await dataCache.put('custom-policy-data', myData, policy: myPolicy);
+   ```
+
+9. **Auto-Refresh with Callbacks:**
+
+   ```dart
+   // Single item refresh
+   final data = await dataCache.get<MyData>('my-data',
+     refreshCallback: () => fetchFreshDataFromApi(),
+     policy: CachePolicy(
+       staleTime: Duration(minutes: 5),
+       refreshStrategy: RefreshStrategy.backgroundRefresh,
+     ),
+   );
+
+   // Multiple items refresh
+   final allData = await dataCache.getAll<MyData>(['item1', 'item2', 'item3'],
+     refreshCallbacks: {
+       'item1': () => fetchItem1FromApi(),
+       'item2': () => fetchItem2FromApi(),
+       'item3': () => fetchItem3FromApi(),
+     },
+     policy: CachePolicy(
+       staleTime: Duration(minutes: 5),
+       refreshStrategy: RefreshStrategy.backgroundRefresh,
+     ),
+   );
+   ```
+
+10. **Cache Analytics:**
+
+```dart
+// Get basic cache metrics
+print('Hit rate: ${dataCache.hitRate}');
+print('Total size: ${dataCache.totalSize} bytes');
+print('Average item size: ${dataCache.averageItemSize} bytes');
+
+// Get most frequently accessed keys
+final topKeys = dataCache.mostFrequentlyAccessedKeys;
+for (final entry in topKeys) {
+  print('${entry.key}: ${entry.value} accesses');
+}
+
+// Get largest items in the cache
+final largestItems = dataCache.largestItems;
+for (final entry in largestItems) {
+  print('${entry.key}: ${entry.value} bytes');
+}
+
+// Get a complete analytics summary
+final summary = dataCache.getAnalyticsSummary();
+print(summary);
+
+// Reset analytics
+dataCache.resetMetrics();
+```
+
+11. **Memory Management with Eviction Strategies:**
+
+```dart
+// Create a cache with LRU (Least Recently Used) eviction strategy
+final dataCache = DataCacheX(
+  cacheAdapter,
+  maxSize: 10 * 1024 * 1024, // 10 MB max size
+  maxItems: 1000, // 1000 items max
+  evictionStrategy: EvictionStrategy.lru,
+);
+
+// Create a cache with LFU (Least Frequently Used) eviction strategy
+final lfuCache = DataCacheX(
+  cacheAdapter,
+  maxSize: 10 * 1024 * 1024,
+  evictionStrategy: EvictionStrategy.lfu,
+);
+
+// Create a cache with FIFO (First In, First Out) eviction strategy
+final fifoCache = DataCacheX(
+  cacheAdapter,
+  maxItems: 500,
+  evictionStrategy: EvictionStrategy.fifo,
+);
+
+// Create a cache with TTL (Time To Live) eviction strategy
+// This strategy evicts items closest to expiration first
+final ttlCache = DataCacheX(
+  cacheAdapter,
+  maxSize: 5 * 1024 * 1024,
+  evictionStrategy: EvictionStrategy.ttl,
+);
+
+// Items with higher priority are less likely to be evicted
+await dataCache.put('important-data', value,
+    policy: CachePolicy(priority: CachePriority.high));
+
+await dataCache.put('critical-data', value,
+    policy: CachePolicy(priority: CachePriority.critical));
+```
+
+12. **Data Compression:**
+
+```dart
+// Create a cache with compression support
+final dataCache = DataCacheX(
+  cacheAdapter,
+  compressionLevel: 6, // 1 (fastest) to 9 (most compression)
+);
+
+// Use automatic compression (only compresses if beneficial)
+await dataCache.put('large-text', largeString,
+    policy: CachePolicy(compression: CompressionMode.auto));
+
+// Always compress the data
+await dataCache.put('always-compressed', value,
+    policy: CachePolicy(compression: CompressionMode.always));
+
+// Never compress the data
+await dataCache.put('never-compressed', value,
+    policy: CachePolicy(compression: CompressionMode.never));
+
+// Use predefined policies
+await dataCache.put('compressed-data', largeString,
+    policy: CachePolicy.compressed());
+
+// Combine compression with encryption
+await dataCache.put('secure-compressed', sensitiveData,
+    policy: CachePolicy.encrypted(compression: CompressionMode.auto));
+
+// Retrieve compressed data (decompression happens automatically)
+final data = await dataCache.get<String>('compressed-data');
+```
+
 ### Advanced Usage
 
 1. **Initialize Background Cleanup:**

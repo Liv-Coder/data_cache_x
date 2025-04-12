@@ -125,4 +125,105 @@ class SqliteAdapter implements CacheAdapter {
     );
     return result.map((e) => e['key'] as String).toList();
   }
+
+  @override
+  Future<void> putAll(Map<String, CacheItem<dynamic>> entries) async {
+    final db = await database;
+    final batch = db.batch();
+
+    for (final entry in entries.entries) {
+      final key = entry.key;
+      final item = entry.value;
+      dynamic value = item.value;
+
+      if (enableEncryption) {
+        value = _aesEncrypt(jsonEncode(item.toJson()));
+      }
+
+      batch.insert(
+        'cache',
+        {
+          'key': key,
+          'value': value,
+          'expiry': item.expiry?.millisecondsSinceEpoch,
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+
+    await batch.commit(noResult: true);
+  }
+
+  @override
+  Future<Map<String, CacheItem<dynamic>>> getAll(List<String> keys) async {
+    if (keys.isEmpty) return {};
+
+    final db = await database;
+    final placeholders = List.filled(keys.length, '?').join(',');
+    final result = await db.query(
+      'cache',
+      where: 'key IN ($placeholders)',
+      whereArgs: keys,
+    );
+
+    final Map<String, CacheItem<dynamic>> cacheItems = {};
+
+    for (final row in result) {
+      final key = row['key'] as String;
+      final dynamic value = row['value'];
+      final int? expiryMillis = row['expiry'] as int?;
+
+      if (value == null) continue;
+
+      if (enableEncryption) {
+        final decryptedValue = _aesDecrypt(value as String);
+        cacheItems[key] = CacheItem.fromJson(jsonDecode(decryptedValue));
+      } else {
+        cacheItems[key] = CacheItem<dynamic>(
+          value: value,
+          expiry: expiryMillis != null
+              ? DateTime.fromMillisecondsSinceEpoch(expiryMillis)
+              : null,
+        );
+      }
+    }
+
+    return cacheItems;
+  }
+
+  @override
+  Future<void> deleteAll(List<String> keys) async {
+    if (keys.isEmpty) return;
+
+    final db = await database;
+    final placeholders = List.filled(keys.length, '?').join(',');
+    await db.delete(
+      'cache',
+      where: 'key IN ($placeholders)',
+      whereArgs: keys,
+    );
+  }
+
+  @override
+  Future<Map<String, bool>> containsKeys(List<String> keys) async {
+    if (keys.isEmpty) return {};
+
+    final db = await database;
+    final placeholders = List.filled(keys.length, '?').join(',');
+    final result = await db.query(
+      'cache',
+      columns: ['key'],
+      where: 'key IN ($placeholders)',
+      whereArgs: keys,
+    );
+
+    final foundKeys = result.map((e) => e['key'] as String).toSet();
+    final Map<String, bool> containsMap = {};
+
+    for (final key in keys) {
+      containsMap[key] = foundKeys.contains(key);
+    }
+
+    return containsMap;
+  }
 }
