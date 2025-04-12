@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   // Private constructor to prevent instantiation
   AppTheme._();
-  
+
   // Colors
   static const Color _primaryColor = Color(0xFF4A6FFF);
   static const Color _secondaryColor = Color(0xFF00C8B8);
@@ -16,19 +16,17 @@ class AppTheme {
   static const Color _darkCardColor = Color(0xFF1E1E1E);
   static const Color _textColor = Color(0xFF333333);
   static const Color _darkTextColor = Color(0xFFE0E0E0);
-  
+
   // Light theme
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
-    colorScheme: ColorScheme.light(
+    colorScheme: const ColorScheme.light(
       primary: _primaryColor,
       secondary: _secondaryColor,
       error: _errorColor,
-      background: _backgroundColor,
       surface: _cardColor,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
-      onBackground: _textColor,
       onSurface: _textColor,
     ),
     scaffoldBackgroundColor: _backgroundColor,
@@ -126,19 +124,17 @@ class AppTheme {
       space: 1,
     ),
   );
-  
+
   // Dark theme
   static final ThemeData darkTheme = ThemeData(
     useMaterial3: true,
-    colorScheme: ColorScheme.dark(
+    colorScheme: const ColorScheme.dark(
       primary: _primaryColor,
       secondary: _secondaryColor,
       error: _errorColor,
-      background: _darkBackgroundColor,
       surface: _darkCardColor,
       onPrimary: Colors.white,
       onSecondary: Colors.white,
-      onBackground: _darkTextColor,
       onSurface: _darkTextColor,
     ),
     scaffoldBackgroundColor: _darkBackgroundColor,
