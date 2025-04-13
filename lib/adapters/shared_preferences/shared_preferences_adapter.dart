@@ -1,19 +1,55 @@
 import 'package:data_cache_x/adapters/cache_adapter.dart';
 import 'package:data_cache_x/models/cache_item.dart';
+import 'package:data_cache_x/models/encryption_options.dart';
+import 'package:data_cache_x/utils/encryption.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:encrypt/encrypt.dart';
 
 class SharedPreferencesAdapter implements CacheAdapter {
   final String? boxName;
   @override
   final bool enableEncryption;
   SharedPreferences? _prefs;
-  final String _encryptionKey;
+  late final Encryption _encryption;
+  late final EncryptionOptions? _encryptionOptions;
 
-  SharedPreferencesAdapter(
-      {this.boxName, this.enableEncryption = false, String? encryptionKey})
-      : _encryptionKey = encryptionKey ?? 'default_secret_key';
+  @override
+  EncryptionOptions? get encryptionOptions => _encryptionOptions;
+
+  /// Creates a new instance of [SharedPreferencesAdapter].
+  ///
+  /// The [boxName] parameter is used to specify the prefix for keys in SharedPreferences.
+  /// If no [boxName] is provided, a default prefix of 'data_cache_x' will be used.
+  ///
+  /// If [enableEncryption] is true, [encryptionOptions] must be provided.
+  /// Throws an [ArgumentError] if encryption is enabled but no options are provided.
+  SharedPreferencesAdapter({
+    this.boxName,
+    this.enableEncryption = false,
+    String? encryptionKey,
+    EncryptionOptions? encryptionOptions,
+  }) {
+    if (enableEncryption) {
+      if (encryptionOptions != null) {
+        _encryptionOptions = encryptionOptions;
+      } else if (encryptionKey != null) {
+        // For backward compatibility
+        _encryptionOptions = EncryptionOptions(
+          algorithm: EncryptionAlgorithm.aes256,
+          key: encryptionKey,
+        );
+      } else {
+        throw ArgumentError(
+            'Encryption options or key must be provided when encryption is enabled');
+      }
+      _encryption = Encryption(
+        algorithm: _encryptionOptions!.algorithm,
+        encryptionKey: _encryptionOptions.key,
+      );
+    } else {
+      _encryptionOptions = null;
+    }
+  }
 
   Future<SharedPreferences> get prefs async {
     if (_prefs != null) return _prefs!;
@@ -23,21 +59,12 @@ class SharedPreferencesAdapter implements CacheAdapter {
 
   String _getKey(String key) => '${boxName ?? 'data_cache_x'}_$key';
 
-  String _aesEncrypt(String data) {
-    final key = Key.fromUtf8(_encryptionKey.padRight(32, '0').substring(0, 32));
-    final iv = IV.fromLength(16);
-    final encrypter = Encrypter(AES(key));
-    final encrypted = encrypter.encrypt(data, iv: iv);
-    return encrypted.base64;
+  String _encrypt(String data) {
+    return _encryption.encrypt(data);
   }
 
-  String _aesDecrypt(String encryptedData) {
-    final key = Key.fromUtf8(_encryptionKey.padRight(32, '0').substring(0, 32));
-    final iv = IV.fromLength(16);
-    final encrypter = Encrypter(AES(key));
-    final decrypted =
-        encrypter.decrypt(Encrypted.fromBase64(encryptedData), iv: iv);
-    return decrypted;
+  String _decrypt(String encryptedData) {
+    return _encryption.decrypt(encryptedData);
   }
 
   @override
@@ -61,7 +88,7 @@ class SharedPreferencesAdapter implements CacheAdapter {
     }
     dynamic value;
     if (enableEncryption) {
-      final decryptedValue = _aesDecrypt(encryptedValue);
+      final decryptedValue = _decrypt(encryptedValue);
       value = jsonDecode(decryptedValue);
     } else {
       final jsonString = encryptedValue;
@@ -85,7 +112,7 @@ class SharedPreferencesAdapter implements CacheAdapter {
     };
     String jsonString = jsonEncode(value);
     if (enableEncryption) {
-      jsonString = _aesEncrypt(jsonEncode(value));
+      jsonString = _encrypt(jsonEncode(value));
     }
     await p.setString(_getKey(key), jsonString);
   }
@@ -116,6 +143,110 @@ class SharedPreferencesAdapter implements CacheAdapter {
   }
 
   @override
+  Future<List<String>> getKeysByTag(String tag,
+      {int? limit, int? offset}) async {
+    final p = await prefs;
+    final keys = p.getKeys();
+    final prefixedKeys = keys
+        .where((key) => key.startsWith('${boxName ?? 'data_cache_x'}_'))
+        .toList();
+    final result = <String>[];
+    int count = 0;
+    final startIndex = offset ?? 0;
+
+    for (final prefixedKey in prefixedKeys) {
+      final key = prefixedKey.substring('${boxName ?? 'data_cache_x'}_'.length);
+      final String? jsonString = p.getString(prefixedKey);
+      if (jsonString == null) continue;
+
+      Map<String, dynamic> jsonMap;
+      if (enableEncryption) {
+        final decryptedValue = _decrypt(jsonString);
+        jsonMap = jsonDecode(decryptedValue);
+      } else {
+        jsonMap = jsonDecode(jsonString);
+      }
+
+      final cacheItem = CacheItem<dynamic>(
+        value: jsonMap['value'],
+        expiry: jsonMap['expiry'] != null
+            ? DateTime.fromMillisecondsSinceEpoch(jsonMap['expiry'] as int)
+            : null,
+      );
+
+      if (cacheItem.tags.contains(tag)) {
+        if (count >= startIndex) {
+          result.add(key);
+          if (limit != null && result.length >= limit) {
+            break;
+          }
+        }
+        count++;
+      }
+    }
+
+    return result;
+  }
+
+  @override
+  Future<List<String>> getKeysByTags(List<String> tags,
+      {int? limit, int? offset}) async {
+    final p = await prefs;
+    final keys = p.getKeys();
+    final prefixedKeys = keys
+        .where((key) => key.startsWith('${boxName ?? 'data_cache_x'}_'))
+        .toList();
+    final result = <String>[];
+    int count = 0;
+    final startIndex = offset ?? 0;
+
+    for (final prefixedKey in prefixedKeys) {
+      final key = prefixedKey.substring('${boxName ?? 'data_cache_x'}_'.length);
+      final String? jsonString = p.getString(prefixedKey);
+      if (jsonString == null) continue;
+
+      Map<String, dynamic> jsonMap;
+      if (enableEncryption) {
+        final decryptedValue = _decrypt(jsonString);
+        jsonMap = jsonDecode(decryptedValue);
+      } else {
+        jsonMap = jsonDecode(jsonString);
+      }
+
+      final cacheItem = CacheItem<dynamic>(
+        value: jsonMap['value'],
+        expiry: jsonMap['expiry'] != null
+            ? DateTime.fromMillisecondsSinceEpoch(jsonMap['expiry'] as int)
+            : null,
+      );
+
+      if (tags.every((tag) => cacheItem.tags.contains(tag))) {
+        if (count >= startIndex) {
+          result.add(key);
+          if (limit != null && result.length >= limit) {
+            break;
+          }
+        }
+        count++;
+      }
+    }
+
+    return result;
+  }
+
+  @override
+  Future<void> deleteByTag(String tag) async {
+    final keysToDelete = await getKeysByTag(tag);
+    await deleteAll(keysToDelete);
+  }
+
+  @override
+  Future<void> deleteByTags(List<String> tags) async {
+    final keysToDelete = await getKeysByTags(tags);
+    await deleteAll(keysToDelete);
+  }
+
+  @override
   Future<void> putAll(Map<String, CacheItem<dynamic>> entries) async {
     final p = await prefs;
     final Map<String, String> stringEntries = {};
@@ -130,7 +261,7 @@ class SharedPreferencesAdapter implements CacheAdapter {
 
       String jsonString = jsonEncode(jsonMap);
       if (enableEncryption) {
-        jsonString = _aesEncrypt(jsonString);
+        jsonString = _encrypt(jsonString);
       }
 
       stringEntries[key] = jsonString;
@@ -156,7 +287,7 @@ class SharedPreferencesAdapter implements CacheAdapter {
 
         Map<String, dynamic> jsonMap;
         if (enableEncryption) {
-          final decryptedValue = _aesDecrypt(jsonString);
+          final decryptedValue = _decrypt(jsonString);
           jsonMap = jsonDecode(decryptedValue);
         } else {
           jsonMap = jsonDecode(jsonString);

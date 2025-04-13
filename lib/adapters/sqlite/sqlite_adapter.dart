@@ -1,20 +1,56 @@
 import 'package:data_cache_x/adapters/cache_adapter.dart';
 import 'package:data_cache_x/models/cache_item.dart';
+import 'package:data_cache_x/models/encryption_options.dart';
+import 'package:data_cache_x/utils/encryption.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'dart:convert';
-import 'package:encrypt/encrypt.dart';
 
 class SqliteAdapter implements CacheAdapter {
   final String? boxName;
   @override
   final bool enableEncryption;
   Database? _database;
-  final String _encryptionKey;
+  late final Encryption _encryption;
+  late final EncryptionOptions? _encryptionOptions;
 
-  SqliteAdapter(
-      {this.boxName, this.enableEncryption = false, String? encryptionKey})
-      : _encryptionKey = encryptionKey ?? 'default_secret_key';
+  @override
+  EncryptionOptions? get encryptionOptions => _encryptionOptions;
+
+  /// Creates a new instance of [SqliteAdapter].
+  ///
+  /// The [boxName] parameter is used to specify the name of the SQLite database to use.
+  /// If no [boxName] is provided, a default name of 'data_cache_x' will be used.
+  ///
+  /// If [enableEncryption] is true, [encryptionOptions] must be provided.
+  /// Throws an [ArgumentError] if encryption is enabled but no options are provided.
+  SqliteAdapter({
+    this.boxName,
+    this.enableEncryption = false,
+    String? encryptionKey,
+    EncryptionOptions? encryptionOptions,
+  }) {
+    if (enableEncryption) {
+      if (encryptionOptions != null) {
+        _encryptionOptions = encryptionOptions;
+      } else if (encryptionKey != null) {
+        // For backward compatibility
+        _encryptionOptions = EncryptionOptions(
+          algorithm: EncryptionAlgorithm.aes256,
+          key: encryptionKey,
+        );
+      } else {
+        throw ArgumentError(
+            'Encryption options or key must be provided when encryption is enabled');
+      }
+      _encryption = Encryption(
+        algorithm: _encryptionOptions!.algorithm,
+        encryptionKey: _encryptionOptions.key,
+      );
+    } else {
+      _encryptionOptions = null;
+    }
+  }
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -39,21 +75,12 @@ class SqliteAdapter implements CacheAdapter {
     ''');
   }
 
-  String _aesEncrypt(String data) {
-    final key = Key.fromUtf8(_encryptionKey.padRight(32, '0').substring(0, 32));
-    final iv = IV.fromLength(16);
-    final encrypter = Encrypter(AES(key));
-    final encrypted = encrypter.encrypt(data, iv: iv);
-    return encrypted.base64;
+  String _encrypt(String data) {
+    return _encryption.encrypt(data);
   }
 
-  String _aesDecrypt(String encryptedData) {
-    final key = Key.fromUtf8(_encryptionKey.padRight(32, '0').substring(0, 32));
-    final iv = IV.fromLength(16);
-    final encrypter = Encrypter(AES(key));
-    final decrypted =
-        encrypter.decrypt(Encrypted.fromBase64(encryptedData), iv: iv);
-    return decrypted;
+  String _decrypt(String encryptedData) {
+    return _encryption.decrypt(encryptedData);
   }
 
   @override
@@ -78,7 +105,7 @@ class SqliteAdapter implements CacheAdapter {
     final item = result.first;
     dynamic value = item['value'];
     if (enableEncryption) {
-      final decryptedValue = _aesDecrypt(value);
+      final decryptedValue = _decrypt(value);
       value = jsonDecode(decryptedValue);
     }
     return CacheItem<dynamic>(
@@ -94,7 +121,7 @@ class SqliteAdapter implements CacheAdapter {
     final db = await database;
     dynamic value = item.value;
     if (enableEncryption) {
-      value = _aesEncrypt(jsonEncode(item.toJson()));
+      value = _encrypt(jsonEncode(item.toJson()));
     }
     await db.insert(
       'cache',
@@ -127,6 +154,104 @@ class SqliteAdapter implements CacheAdapter {
   }
 
   @override
+  Future<List<String>> getKeysByTag(String tag,
+      {int? limit, int? offset}) async {
+    final db = await database;
+    final allItems = await db.query('cache');
+    final result = <String>[];
+    int count = 0;
+    final startIndex = offset ?? 0;
+
+    for (final item in allItems) {
+      final key = item['key'] as String;
+      final dynamic value = item['value'];
+
+      if (value == null) continue;
+
+      CacheItem<dynamic> cacheItem;
+      if (enableEncryption) {
+        final decryptedValue = _decrypt(value as String);
+        cacheItem = CacheItem.fromJson(jsonDecode(decryptedValue));
+      } else {
+        final Map<String, dynamic> map = jsonDecode(value as String);
+        cacheItem = CacheItem<dynamic>(
+          value: map['value'],
+          expiry: map['expiry'] != null
+              ? DateTime.fromMillisecondsSinceEpoch(map['expiry'] as int)
+              : null,
+        );
+      }
+
+      if (cacheItem.tags.contains(tag)) {
+        if (count >= startIndex) {
+          result.add(key);
+          if (limit != null && result.length >= limit) {
+            break;
+          }
+        }
+        count++;
+      }
+    }
+
+    return result;
+  }
+
+  @override
+  Future<List<String>> getKeysByTags(List<String> tags,
+      {int? limit, int? offset}) async {
+    final db = await database;
+    final allItems = await db.query('cache');
+    final result = <String>[];
+    int count = 0;
+    final startIndex = offset ?? 0;
+
+    for (final item in allItems) {
+      final key = item['key'] as String;
+      final dynamic value = item['value'];
+
+      if (value == null) continue;
+
+      CacheItem<dynamic> cacheItem;
+      if (enableEncryption) {
+        final decryptedValue = _decrypt(value as String);
+        cacheItem = CacheItem.fromJson(jsonDecode(decryptedValue));
+      } else {
+        final Map<String, dynamic> map = jsonDecode(value as String);
+        cacheItem = CacheItem<dynamic>(
+          value: map['value'],
+          expiry: map['expiry'] != null
+              ? DateTime.fromMillisecondsSinceEpoch(map['expiry'] as int)
+              : null,
+        );
+      }
+
+      if (tags.every((tag) => cacheItem.tags.contains(tag))) {
+        if (count >= startIndex) {
+          result.add(key);
+          if (limit != null && result.length >= limit) {
+            break;
+          }
+        }
+        count++;
+      }
+    }
+
+    return result;
+  }
+
+  @override
+  Future<void> deleteByTag(String tag) async {
+    final keysToDelete = await getKeysByTag(tag);
+    await deleteAll(keysToDelete);
+  }
+
+  @override
+  Future<void> deleteByTags(List<String> tags) async {
+    final keysToDelete = await getKeysByTags(tags);
+    await deleteAll(keysToDelete);
+  }
+
+  @override
   Future<void> putAll(Map<String, CacheItem<dynamic>> entries) async {
     final db = await database;
     final batch = db.batch();
@@ -137,7 +262,7 @@ class SqliteAdapter implements CacheAdapter {
       dynamic value = item.value;
 
       if (enableEncryption) {
-        value = _aesEncrypt(jsonEncode(item.toJson()));
+        value = _encrypt(jsonEncode(item.toJson()));
       }
 
       batch.insert(
@@ -176,7 +301,7 @@ class SqliteAdapter implements CacheAdapter {
       if (value == null) continue;
 
       if (enableEncryption) {
-        final decryptedValue = _aesDecrypt(value as String);
+        final decryptedValue = _decrypt(value as String);
         cacheItems[key] = CacheItem.fromJson(jsonDecode(decryptedValue));
       } else {
         cacheItems[key] = CacheItem<dynamic>(

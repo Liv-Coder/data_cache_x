@@ -26,6 +26,8 @@
 
 - **Multiple Storage Options**: Choose from memory, Hive, SQLite, or SharedPreferences adapters
 - **Flexible Caching Policies**: Configure expiry, compression, encryption, and priority
+- **Enhanced Security**: Multiple encryption algorithms (AES-256, ChaCha20, Salsa20) and secure key storage
+- **Tag-Based Management**: Organize and selectively invalidate cache items using tags
 - **Memory Management**: Automatic cleanup and multiple eviction strategies
 - **Performance Analytics**: Track cache performance with built-in metrics
 - **Type Safety**: Full support for generic types and complex data structures
@@ -134,6 +136,7 @@ final myPolicy = CachePolicy(
   refreshStrategy: RefreshStrategy.backgroundRefresh,
   maxSize: 1024 * 10,                   // 10 KB max size
   encrypt: true,                        // Enable encryption
+  encryptionAlgorithm: EncryptionAlgorithm.aes256, // Encryption algorithm
   compression: CompressionMode.auto,    // Auto-compress if beneficial
 );
 
@@ -172,6 +175,68 @@ final data = await dataCache.getAll<dynamic>(['users', 'posts', 'comments'],
   },
   policy: CachePolicy(staleTime: Duration(minutes: 10)),
 );
+```
+
+### Enhanced Encryption
+
+```dart
+// Initialize with encryption options
+import 'package:data_cache_x/utils/encryption.dart';
+import 'package:data_cache_x/models/encryption_options.dart';
+
+// Create encryption options with AES-256
+final aesOptions = EncryptionOptions.aes256(
+  key: 'your-secure-encryption-key-here',
+);
+
+// Generate a random secure key
+final randomKeyOptions = EncryptionOptions.withRandomKey(
+  algorithm: EncryptionAlgorithm.aes256,
+);
+
+// Derive a key from a password
+final passwordOptions = EncryptionOptions.fromPassword(
+  password: 'user-password',
+  salt: 'random-salt-value',
+  algorithm: EncryptionAlgorithm.aes256,
+);
+
+// Initialize cache with encryption
+await setupDataCacheX(
+  enableEncryption: true,
+  encryptionOptions: aesOptions,
+);
+```
+
+### Tag-Based Cache Management
+
+```dart
+// Store items with tags
+await dataCache.put('user_1', userData1, tags: {'users', 'active'});
+await dataCache.put('user_2', userData2, tags: {'users', 'inactive'});
+await dataCache.put('product_1', product1, tags: {'products', 'featured'});
+
+// Store multiple items with the same tags
+await dataCache.putAll({
+  'order_1': order1,
+  'order_2': order2,
+  'order_3': order3,
+}, tags: {'orders', 'recent'});
+
+// Get all keys with a specific tag
+final userKeys = await dataCache.getKeysByTag('users');
+
+// Get all keys with multiple tags
+final activeUserKeys = await dataCache.getKeysByTags(['users', 'active']);
+
+// Get all items with a specific tag
+final allUsers = await dataCache.getByTag<UserData>('users');
+
+// Delete all items with a specific tag
+await dataCache.deleteByTag('inactive');
+
+// Delete all items with multiple tags
+await dataCache.deleteByTags(['orders', 'recent']);
 ```
 
 ## 🔍 Advanced Features
@@ -374,6 +439,52 @@ flutter run
 - `CompressionMode.auto`: Compress only if beneficial
 - `CompressionMode.always`: Always compress
 - `CompressionMode.never`: Never compress
+
+### Encryption Algorithms
+
+- `EncryptionAlgorithm.aes256`: AES-256 encryption (default)
+
+### Tag-Based Cache API Reference
+
+| Method                                                                             | Description                               |
+| ---------------------------------------------------------------------------------- | ----------------------------------------- |
+| `Future<List<String>> getKeysByTag(String tag, {int? limit, int? offset})`         | Gets keys with a specific tag             |
+| `Future<List<String>> getKeysByTags(List<String> tags, {int? limit, int? offset})` | Gets keys with all specified tags         |
+| `Future<void> deleteByTag(String tag)`                                             | Deletes all items with a specific tag     |
+| `Future<void> deleteByTags(List<String> tags)`                                     | Deletes all items with all specified tags |
+| `Future<Map<String, T>> getByTag<T>(String tag, {CachePolicy? policy})`            | Gets all items with a specific tag        |
+| `Future<Map<String, T>> getByTags<T>(List<String> tags, {CachePolicy? policy})`    | Gets all items with all specified tags    |
+
+### Secure Key Storage
+
+```dart
+import 'package:data_cache_x/utils/secure_storage.dart';
+
+// Create a secure storage instance
+final secureStorage = SecureStorage();
+
+// Generate and store a random encryption key
+final encryptionOptions = await secureStorage.generateAndStoreKey(
+  algorithm: EncryptionAlgorithm.aes256,
+);
+
+// Derive a key from a password
+final encryptionOptions = await secureStorage.deriveAndStoreKey(
+  password: 'my-secure-password',
+  salt: 'random-salt-value',
+  algorithm: EncryptionAlgorithm.chacha20,
+  iterations: 10000,
+);
+
+// Retrieve stored encryption options
+final encryptionOptions = await secureStorage.getEncryptionOptions();
+
+// Initialize cache with encryption
+await setupDataCacheX(
+  enableEncryption: true,
+  encryptionOptions: encryptionOptions,
+);
+```
 
 ## 📄 License
 

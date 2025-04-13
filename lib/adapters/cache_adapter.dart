@@ -1,4 +1,5 @@
 import 'package:data_cache_x/models/cache_item.dart';
+import 'package:data_cache_x/models/encryption_options.dart';
 
 /// An abstract class that defines the interface for cache adapters.
 ///
@@ -99,6 +100,34 @@ abstract class CacheAdapter {
   /// The [limit] and [offset] parameters can be used to paginate the results.
   Future<List<String>> getKeys({int? limit, int? offset});
 
+  /// Returns a list of all keys in the cache that have the specified tag.
+  ///
+  /// Throws a [CacheException] if there is an error retrieving the keys.
+  /// The [limit] and [offset] parameters can be used to paginate the results.
+  Future<List<String>> getKeysByTag(String tag, {int? limit, int? offset});
+
+  /// Returns a list of all keys in the cache that have all the specified tags.
+  ///
+  /// Throws a [CacheException] if there is an error retrieving the keys.
+  /// The [limit] and [offset] parameters can be used to paginate the results.
+  Future<List<String>> getKeysByTags(List<String> tags,
+      {int? limit, int? offset});
+
+  /// Deletes all items in the cache that have the specified tag.
+  ///
+  /// Throws a [CacheException] if there is an error deleting the items.
+  Future<void> deleteByTag(String tag);
+
+  /// Deletes all items in the cache that have all the specified tags.
+  ///
+  /// Throws a [CacheException] if there is an error deleting the items.
+  Future<void> deleteByTags(List<String> tags);
+
   /// Indicates if encryption is enabled for this adapter.
   bool get enableEncryption;
+
+  /// Returns the encryption options for this adapter.
+  ///
+  /// Returns `null` if encryption is not enabled.
+  EncryptionOptions? get encryptionOptions;
 }

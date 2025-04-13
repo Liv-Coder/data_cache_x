@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.6 (Upcoming)
+
+- Added enhanced encryption support with AES-256
+- Implemented secure key storage with flutter_secure_storage
+- Added key derivation from passwords using PBKDF2
+- Introduced tag-based cache management for selective invalidation
+- Added methods to retrieve, delete, and manage cache items by tags
+- Enhanced security with configurable encryption options
+- Improved encryption key management with secure random key generation
+- Updated all adapters to support the new encryption and tagging features
+
 ## 0.1.5
 
 - Added comprehensive analytics for cache performance monitoring
@@ -9,7 +20,7 @@
 - Enhanced background cleanup with configurable frequency
 - Added support for sliding expiry that extends item lifetime on access
 - Implemented priority-based cache management
-- Fixed type error in CacheItemAdapter for List<String> handling
+- Fixed type error in CacheItemAdapter for List\<String\> handling
 - Improved error handling and logging
 - Enhanced example app with more demonstrations
 

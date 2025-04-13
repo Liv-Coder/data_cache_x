@@ -36,6 +36,10 @@ class CacheItem<T> {
   /// This is only set if the item is compressed.
   final double? compressionRatio;
 
+  /// The tags associated with this cache item.
+  /// Tags can be used to group related items and perform operations on them as a group.
+  final Set<String> tags;
+
   /// Creates a new instance of [CacheItem].
   CacheItem({
     required this.value,
@@ -48,8 +52,10 @@ class CacheItem<T> {
     this.isCompressed = false,
     this.originalSize,
     this.compressionRatio,
+    Set<String>? tags,
   })  : createdAt = createdAt ?? DateTime.now(),
-        lastAccessedAt = lastAccessedAt ?? DateTime.now();
+        lastAccessedAt = lastAccessedAt ?? DateTime.now(),
+        tags = tags ?? {};
 
   bool get isExpired => expiry != null && DateTime.now().isAfter(expiry!);
 
@@ -77,6 +83,7 @@ class CacheItem<T> {
       isCompressed: isCompressed,
       originalSize: originalSize,
       compressionRatio: compressionRatio,
+      tags: tags,
     );
   }
 
@@ -93,11 +100,18 @@ class CacheItem<T> {
       'isCompressed': isCompressed,
       'originalSize': originalSize,
       'compressionRatio': compressionRatio,
+      'tags': tags.toList(),
     };
   }
 
   /// Creates a cache item from a JSON map.
   factory CacheItem.fromJson(Map<String, dynamic> json) {
+    Set<String>? tags;
+    if (json['tags'] != null) {
+      final tagsList = json['tags'] as List<dynamic>;
+      tags = tagsList.map((tag) => tag as String).toSet();
+    }
+
     return CacheItem<T>(
       value: json['value'] as T,
       expiry: json['expiry'] != null ? DateTime.parse(json['expiry']) : null,
@@ -116,6 +130,7 @@ class CacheItem<T> {
       isCompressed: json['isCompressed'] as bool? ?? false,
       originalSize: json['originalSize'] as int?,
       compressionRatio: json['compressionRatio'] as double?,
+      tags: tags,
     );
   }
 

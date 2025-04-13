@@ -116,6 +116,7 @@ class DataCacheX {
   /// The [expiry] parameter can be used to set an optional expiry time for the data.
   /// The [slidingExpiry] parameter can be used to set an optional sliding expiry time for the data.
   /// The [policy] parameter can be used to set a cache policy for the data.
+  /// The [tags] parameter can be used to associate tags with the data for easier retrieval and management.
   ///
   /// If both individual parameters (expiry, slidingExpiry) and a policy are provided,
   /// the individual parameters will take precedence over the policy.
@@ -127,6 +128,7 @@ class DataCacheX {
     Duration? expiry,
     Duration? slidingExpiry,
     CachePolicy? policy,
+    Set<String>? tags,
   }) async {
     try {
       final effectivePolicy = policy ?? CachePolicy.defaultPolicy;
@@ -184,6 +186,7 @@ class DataCacheX {
         isCompressed: isCompressed,
         originalSize: originalSize,
         compressionRatio: compressionRatio,
+        tags: tags,
       );
 
       // Use the SizeEstimator for more accurate size estimation
@@ -680,6 +683,7 @@ class DataCacheX {
   /// The [expiry] parameter can be used to set an optional expiry time for all the data.
   /// The [slidingExpiry] parameter can be used to set an optional sliding expiry time for all the data.
   /// The [policy] parameter can be used to set a cache policy for all the data.
+  /// The [tags] parameter can be used to associate tags with all the data for easier retrieval and management.
   ///
   /// If both individual parameters (expiry, slidingExpiry) and a policy are provided,
   /// the individual parameters will take precedence over the policy.
@@ -690,6 +694,7 @@ class DataCacheX {
     Duration? expiry,
     Duration? slidingExpiry,
     CachePolicy? policy,
+    Set<String>? tags,
   }) async {
     try {
       final effectivePolicy = policy ?? CachePolicy.defaultPolicy;
@@ -754,6 +759,7 @@ class DataCacheX {
           isCompressed: isCompressed,
           originalSize: originalSize,
           compressionRatio: compressionRatio,
+          tags: tags,
         );
 
         // Check if the item exceeds the maximum size (if specified)
@@ -966,6 +972,167 @@ class DataCacheX {
     } catch (e) {
       _log.severe('Failed to delete data from cache (Unknown Error): $e');
       throw CacheException('Failed to delete data from cache: $e');
+    }
+  }
+
+  /// Returns a list of all keys in the cache that have the specified tag.
+  ///
+  /// The [limit] and [offset] parameters can be used to paginate the results.
+  /// Throws a [CacheException] if there is an error retrieving the keys.
+  Future<List<String>> getKeysByTag(String tag,
+      {int? limit, int? offset}) async {
+    try {
+      if (tag.isEmpty) {
+        throw ArgumentError('Tag cannot be empty');
+      }
+
+      return await _cacheAdapter.getKeysByTag(tag,
+          limit: limit, offset: offset);
+    } on HiveError catch (e) {
+      _log.severe('Failed to get keys by tag from cache (HiveError): $e');
+      throw CacheException(
+          'Failed to get keys by tag from cache: ${e.message}');
+    } catch (e) {
+      _log.severe('Failed to get keys by tag from cache (Unknown Error): $e');
+      throw CacheException('Failed to get keys by tag from cache: $e');
+    }
+  }
+
+  /// Returns a list of all keys in the cache that have all the specified tags.
+  ///
+  /// The [limit] and [offset] parameters can be used to paginate the results.
+  /// Throws a [CacheException] if there is an error retrieving the keys.
+  Future<List<String>> getKeysByTags(List<String> tags,
+      {int? limit, int? offset}) async {
+    try {
+      if (tags.isEmpty) {
+        throw ArgumentError('Tags list cannot be empty');
+      }
+
+      for (final tag in tags) {
+        if (tag.isEmpty) {
+          throw ArgumentError('Tags cannot be empty');
+        }
+      }
+
+      return await _cacheAdapter.getKeysByTags(tags,
+          limit: limit, offset: offset);
+    } on HiveError catch (e) {
+      _log.severe('Failed to get keys by tags from cache (HiveError): $e');
+      throw CacheException(
+          'Failed to get keys by tags from cache: ${e.message}');
+    } catch (e) {
+      _log.severe('Failed to get keys by tags from cache (Unknown Error): $e');
+      throw CacheException('Failed to get keys by tags from cache: $e');
+    }
+  }
+
+  /// Deletes all items in the cache that have the specified tag.
+  ///
+  /// Throws an [ArgumentError] if the tag is empty.
+  /// Throws a [CacheException] if there is an error deleting the items.
+  Future<void> deleteByTag(String tag) async {
+    try {
+      if (tag.isEmpty) {
+        throw ArgumentError('Tag cannot be empty');
+      }
+
+      await _cacheAdapter.deleteByTag(tag);
+    } on HiveError catch (e) {
+      _log.severe('Failed to delete data by tag from cache (HiveError): $e');
+      throw CacheException(
+          'Failed to delete data by tag from cache: ${e.message}');
+    } catch (e) {
+      _log.severe(
+          'Failed to delete data by tag from cache (Unknown Error): $e');
+      throw CacheException('Failed to delete data by tag from cache: $e');
+    }
+  }
+
+  /// Deletes all items in the cache that have all the specified tags.
+  ///
+  /// Throws an [ArgumentError] if the tags list is empty or contains empty tags.
+  /// Throws a [CacheException] if there is an error deleting the items.
+  Future<void> deleteByTags(List<String> tags) async {
+    try {
+      if (tags.isEmpty) {
+        throw ArgumentError('Tags list cannot be empty');
+      }
+
+      for (final tag in tags) {
+        if (tag.isEmpty) {
+          throw ArgumentError('Tags cannot be empty');
+        }
+      }
+
+      await _cacheAdapter.deleteByTags(tags);
+    } on HiveError catch (e) {
+      _log.severe('Failed to delete data by tags from cache (HiveError): $e');
+      throw CacheException(
+          'Failed to delete data by tags from cache: ${e.message}');
+    } catch (e) {
+      _log.severe(
+          'Failed to delete data by tags from cache (Unknown Error): $e');
+      throw CacheException('Failed to delete data by tags from cache: $e');
+    }
+  }
+
+  /// Retrieves all values associated with the given tag.
+  ///
+  /// Returns a map where the keys are the original keys and the values are the retrieved values.
+  /// If a key is not found in the cache, it will not be included in the returned map.
+  ///
+  /// The [policy] parameter can be used to specify a cache policy for the operation.
+  /// Throws an [ArgumentError] if the tag is empty.
+  /// Throws a [CacheException] if there is an error retrieving the data.
+  Future<Map<String, T>> getByTag<T>(String tag, {CachePolicy? policy}) async {
+    try {
+      if (tag.isEmpty) {
+        throw ArgumentError('Tag cannot be empty');
+      }
+
+      final keys = await getKeysByTag(tag);
+      return await getAll<T>(keys, policy: policy);
+    } on HiveError catch (e) {
+      _log.severe('Failed to get data by tag from cache (HiveError): $e');
+      throw CacheException(
+          'Failed to get data by tag from cache: ${e.message}');
+    } catch (e) {
+      _log.severe('Failed to get data by tag from cache (Unknown Error): $e');
+      throw CacheException('Failed to get data by tag from cache: $e');
+    }
+  }
+
+  /// Retrieves all values associated with all the given tags.
+  ///
+  /// Returns a map where the keys are the original keys and the values are the retrieved values.
+  /// If a key is not found in the cache, it will not be included in the returned map.
+  ///
+  /// The [policy] parameter can be used to specify a cache policy for the operation.
+  /// Throws an [ArgumentError] if the tags list is empty or contains empty tags.
+  /// Throws a [CacheException] if there is an error retrieving the data.
+  Future<Map<String, T>> getByTags<T>(List<String> tags,
+      {CachePolicy? policy}) async {
+    try {
+      if (tags.isEmpty) {
+        throw ArgumentError('Tags list cannot be empty');
+      }
+
+      for (final tag in tags) {
+        if (tag.isEmpty) {
+          throw ArgumentError('Tags cannot be empty');
+        }
+      }
+
+      final keys = await getKeysByTags(tags);
+      return await getAll<T>(keys, policy: policy);
+    } on HiveError catch (e) {
+      _log.severe('Failed to get data by tags from cache (HiveError): $e');
+      throw CacheException(
+          'Failed to get data by tags from cache: ${e.message}');
+    } catch (e) {
+      _log.severe('Failed to get data by tags from cache (Unknown Error): $e');
+      throw CacheException('Failed to get data by tags from cache: $e');
     }
   }
 }

@@ -5,6 +5,7 @@ import 'package:data_cache_x/adapters/sqlite/sqlite_adapter.dart';
 import 'package:data_cache_x/adapters/shared_preferences/shared_preferences_adapter.dart';
 import 'package:data_cache_x/core/data_cache_x.dart';
 import 'package:data_cache_x/models/cache_item.dart';
+import 'package:data_cache_x/models/encryption_options.dart';
 import 'package:data_cache_x/serializers/data_serializer.dart';
 import 'package:data_cache_x/serializers/json_data_serializer.dart';
 import 'utils/background_cleanup.dart';
@@ -106,6 +107,7 @@ Future<void> setupDataCacheX({
   CacheAdapterType adapterType = CacheAdapterType.hive,
   bool enableEncryption = false,
   String? encryptionKey,
+  EncryptionOptions? encryptionOptions,
   Map<Type, TypeAdapter<CacheItem>>? customAdapters,
   Map<Type, DataSerializer>? customSerializers,
 }) async {
@@ -264,6 +266,7 @@ Future<void> setupDataCacheX({
           boxName: boxName,
           enableEncryption: enableEncryption,
           encryptionKey: encryptionKey,
+          encryptionOptions: encryptionOptions,
         );
         // Initialize the adapter by opening the Hive box
         await hiveAdapter.init();
@@ -280,7 +283,10 @@ Future<void> setupDataCacheX({
     case CacheAdapterType.memory:
       if (!getIt.isRegistered<MemoryAdapter>()) {
         final memoryAdapter = MemoryAdapter(
-            enableEncryption: enableEncryption, encryptionKey: encryptionKey);
+          enableEncryption: enableEncryption,
+          encryptionKey: encryptionKey,
+          encryptionOptions: encryptionOptions,
+        );
         getIt.registerSingleton<MemoryAdapter>(memoryAdapter);
         cacheAdapter = memoryAdapter;
       } else {
@@ -293,6 +299,7 @@ Future<void> setupDataCacheX({
           boxName: boxName,
           enableEncryption: enableEncryption,
           encryptionKey: encryptionKey,
+          encryptionOptions: encryptionOptions,
         );
         getIt.registerSingleton<SqliteAdapter>(sqliteAdapter);
         cacheAdapter = sqliteAdapter;
@@ -306,6 +313,7 @@ Future<void> setupDataCacheX({
           boxName: boxName,
           enableEncryption: enableEncryption,
           encryptionKey: encryptionKey,
+          encryptionOptions: encryptionOptions,
         );
         getIt.registerSingleton<SharedPreferencesAdapter>(
             sharedPreferencesAdapter);

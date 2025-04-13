@@ -1,8 +1,9 @@
 import 'package:data_cache_x/adapters/cache_adapter.dart';
 import 'package:data_cache_x/models/cache_item.dart';
+import 'package:data_cache_x/models/encryption_options.dart';
+import 'package:data_cache_x/utils/encryption.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'dart:convert';
-import 'package:encrypt/encrypt.dart';
 import 'package:data_cache_x/service_locator.dart';
 
 /// A concrete implementation of [CacheAdapter] that uses the Hive NoSQL database for storage.
@@ -21,24 +22,52 @@ import 'package:data_cache_x/service_locator.dart';
 /// ```
 class HiveAdapter implements CacheAdapter {
   late Box _box;
-  final String _encryptionKey;
+  late final Encryption _encryption;
+  late final EncryptionOptions? _encryptionOptions;
   final String _boxName;
 
   @override
   final bool enableEncryption;
   bool _isInitialized = false;
 
+  @override
+  EncryptionOptions? get encryptionOptions => _encryptionOptions;
+
   /// Creates a new instance of [HiveAdapter].
   ///
   /// The [boxName] parameter is used to specify the name of the Hive box to use.
   /// If no [boxName] is provided, a default box name of 'data_cache_x' will be used.
+  ///
+  /// If [enableEncryption] is true, [encryptionOptions] must be provided.
+  /// Throws an [ArgumentError] if encryption is enabled but no options are provided.
   HiveAdapter(
     this.typeAdapterRegistry, {
     String? boxName,
     this.enableEncryption = false,
     String? encryptionKey,
-  })  : _encryptionKey = encryptionKey ?? 'default_secret_key',
-        _boxName = boxName ?? 'data_cache_x';
+    EncryptionOptions? encryptionOptions,
+  }) : _boxName = boxName ?? 'data_cache_x' {
+    if (enableEncryption) {
+      if (encryptionOptions != null) {
+        _encryptionOptions = encryptionOptions;
+      } else if (encryptionKey != null) {
+        // For backward compatibility
+        _encryptionOptions = EncryptionOptions(
+          algorithm: EncryptionAlgorithm.aes256,
+          key: encryptionKey,
+        );
+      } else {
+        throw ArgumentError(
+            'Encryption options or key must be provided when encryption is enabled');
+      }
+      _encryption = Encryption(
+        algorithm: _encryptionOptions!.algorithm,
+        encryptionKey: _encryptionOptions.key,
+      );
+    } else {
+      _encryptionOptions = null;
+    }
+  }
 
   final TypeAdapterRegistry typeAdapterRegistry;
 
@@ -56,21 +85,12 @@ class HiveAdapter implements CacheAdapter {
     _isInitialized = true;
   }
 
-  String _aesEncrypt(String data) {
-    final key = Key.fromUtf8(_encryptionKey.padRight(32, '0').substring(0, 32));
-    final iv = IV.fromLength(16);
-    final encrypter = Encrypter(AES(key));
-    final encrypted = encrypter.encrypt(data, iv: iv);
-    return encrypted.base64;
+  String _encrypt(String data) {
+    return _encryption.encrypt(data);
   }
 
-  String _aesDecrypt(String encryptedData) {
-    final key = Key.fromUtf8(_encryptionKey.padRight(32, '0').substring(0, 32));
-    final iv = IV.fromLength(16);
-    final encrypter = Encrypter(AES(key));
-    final decrypted =
-        encrypter.decrypt(Encrypted.fromBase64(encryptedData), iv: iv);
-    return decrypted;
+  String _decrypt(String encryptedData) {
+    return _encryption.decrypt(encryptedData);
   }
 
   @override
@@ -78,7 +98,7 @@ class HiveAdapter implements CacheAdapter {
     if (!_isInitialized) await init();
 
     if (enableEncryption) {
-      final encryptedValue = _aesEncrypt(jsonEncode(value.toJson()));
+      final encryptedValue = _encrypt(jsonEncode(value.toJson()));
       await _box.put(key, encryptedValue);
     } else {
       await _box.put(key, value);
@@ -94,7 +114,7 @@ class HiveAdapter implements CacheAdapter {
       return null;
     }
     if (enableEncryption) {
-      final decryptedValue = _aesDecrypt(storedValue);
+      final decryptedValue = _decrypt(storedValue);
       return CacheItem.fromJson(jsonDecode(decryptedValue));
     } else {
       return storedValue as CacheItem<dynamic>?;
@@ -135,6 +155,90 @@ class HiveAdapter implements CacheAdapter {
   }
 
   @override
+  Future<List<String>> getKeysByTag(String tag,
+      {int? limit, int? offset}) async {
+    if (!_isInitialized) await init();
+
+    final result = <String>[];
+    final startIndex = offset ?? 0;
+    int count = 0;
+
+    for (final key in _box.keys) {
+      final dynamic storedValue = _box.get(key);
+      if (storedValue == null) continue;
+
+      CacheItem<dynamic> cacheItem;
+      if (enableEncryption) {
+        final decryptedValue = _decrypt(storedValue as String);
+        cacheItem = CacheItem.fromJson(jsonDecode(decryptedValue));
+      } else {
+        cacheItem = storedValue as CacheItem<dynamic>;
+      }
+
+      if (cacheItem.tags.contains(tag)) {
+        if (count >= startIndex) {
+          result.add(key as String);
+          if (limit != null && result.length >= limit) {
+            break;
+          }
+        }
+        count++;
+      }
+    }
+
+    return result;
+  }
+
+  @override
+  Future<List<String>> getKeysByTags(List<String> tags,
+      {int? limit, int? offset}) async {
+    if (!_isInitialized) await init();
+
+    final result = <String>[];
+    final startIndex = offset ?? 0;
+    int count = 0;
+
+    for (final key in _box.keys) {
+      final dynamic storedValue = _box.get(key);
+      if (storedValue == null) continue;
+
+      CacheItem<dynamic> cacheItem;
+      if (enableEncryption) {
+        final decryptedValue = _decrypt(storedValue as String);
+        cacheItem = CacheItem.fromJson(jsonDecode(decryptedValue));
+      } else {
+        cacheItem = storedValue as CacheItem<dynamic>;
+      }
+
+      if (tags.every((tag) => cacheItem.tags.contains(tag))) {
+        if (count >= startIndex) {
+          result.add(key as String);
+          if (limit != null && result.length >= limit) {
+            break;
+          }
+        }
+        count++;
+      }
+    }
+
+    return result;
+  }
+
+  @override
+  Future<void> deleteByTag(String tag) async {
+    if (!_isInitialized) await init();
+    final keysToDelete = await getKeysByTag(tag);
+    await deleteAll(keysToDelete);
+  }
+
+  @override
+  Future<void> deleteByTags(List<String> tags) async {
+    if (!_isInitialized) await init();
+    final keysToDelete = await getKeysByTags(tags);
+    await deleteAll(keysToDelete);
+  }
+
+  @override
   Future<void> putAll(Map<String, CacheItem<dynamic>> entries) async {
     if (!_isInitialized) await init();
 
@@ -142,7 +246,7 @@ class HiveAdapter implements CacheAdapter {
 
     for (final entry in entries.entries) {
       if (enableEncryption) {
-        boxEntries[entry.key] = _aesEncrypt(jsonEncode(entry.value.toJson()));
+        boxEntries[entry.key] = _encrypt(jsonEncode(entry.value.toJson()));
       } else {
         boxEntries[entry.key] = entry.value;
       }
@@ -166,7 +270,7 @@ class HiveAdapter implements CacheAdapter {
         if (storedValue == null) continue;
 
         if (enableEncryption) {
-          final decryptedValue = _aesDecrypt(storedValue);
+          final decryptedValue = _decrypt(storedValue);
           result[key] = CacheItem.fromJson(jsonDecode(decryptedValue));
         } else {
           result[key] = storedValue as CacheItem<dynamic>;
