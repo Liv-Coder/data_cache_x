@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
+import 'dart:isolate';
 import 'package:archive/archive.dart';
 import 'package:logging/logging.dart';
 
@@ -14,36 +15,96 @@ class Compression {
   /// Values range from 1 (fastest, least compression) to 9 (slowest, most compression).
   final int _level;
 
+  /// The threshold (in characters) above which compression will be performed in a separate isolate.
+  final int _asyncThreshold;
+
   /// Creates a new instance of [Compression].
   ///
   /// The [level] parameter can be used to set the compression level.
   /// Values range from 1 (fastest, least compression) to 9 (slowest, most compression).
   /// The default value is 6, which provides a good balance between speed and compression ratio.
-  Compression({int level = 6}) : _level = level.clamp(1, 9);
+  ///
+  /// The [asyncThreshold] parameter determines the string size (in characters) above which
+  /// compression will be performed in a separate isolate to avoid blocking the main thread.
+  /// The default value is 50000 characters.
+  Compression({int level = 6, int asyncThreshold = 50000})
+      : _level = level.clamp(1, 9),
+        _asyncThreshold = asyncThreshold;
 
   /// Compresses the given string data.
   ///
   /// Returns the compressed data as a base64-encoded string.
+  /// For small strings, this is done synchronously.
+  /// For large strings (above [_asyncThreshold]), this is done in a separate isolate.
   String compressString(String data) {
     try {
-      // Convert the string to bytes
-      final bytes = utf8.encode(data);
+      // For small strings, compress synchronously
+      if (data.length < _asyncThreshold) {
+        return _compressStringSync(data);
+      }
 
-      // Compress the bytes
-      final compressedBytes = _compressBytes(bytes);
-
-      // Convert the compressed bytes to a base64-encoded string
-      final compressedString = base64Encode(compressedBytes);
-
-      _log.fine(
-          'Compressed string from ${data.length} to ${compressedString.length} characters');
-
-      return compressedString;
+      // For large strings, we should use the async version
+      // But since this method is synchronous, we'll log a warning and still do it synchronously
+      _log.warning(
+          'Large string (${data.length} chars) being compressed synchronously. Consider using compressStringAsync for better performance.');
+      return _compressStringSync(data);
     } catch (e) {
       _log.warning('Failed to compress string: $e');
       // Return the original data if compression fails
       return data;
     }
+  }
+
+  /// Compresses the given string data asynchronously.
+  ///
+  /// Returns the compressed data as a base64-encoded string.
+  /// For large strings (above [_asyncThreshold]), this is done in a separate isolate
+  /// to avoid blocking the main thread.
+  Future<String> compressStringAsync(String data) async {
+    try {
+      // For small strings, compress synchronously
+      if (data.length < _asyncThreshold) {
+        return _compressStringSync(data);
+      }
+
+      // For large strings, compress in a separate isolate
+      _log.fine('Compressing large string (${data.length} chars) in isolate');
+
+      // Create a message to send to the isolate
+      final message = _CompressionMessage(
+        data: data,
+        level: _level,
+      );
+
+      // Compress in isolate
+      final result = await Isolate.run(() => _compressInIsolate(message));
+
+      _log.fine(
+          'Compressed string from ${data.length} to ${result.length} characters in isolate');
+
+      return result;
+    } catch (e) {
+      _log.warning('Failed to compress string asynchronously: $e');
+      // Return the original data if compression fails
+      return data;
+    }
+  }
+
+  /// Synchronously compresses a string.
+  String _compressStringSync(String data) {
+    // Convert the string to bytes
+    final bytes = utf8.encode(data);
+
+    // Compress the bytes
+    final compressedBytes = _compressBytes(bytes);
+
+    // Convert the compressed bytes to a base64-encoded string
+    final compressedString = base64Encode(compressedBytes);
+
+    _log.fine(
+        'Compressed string from ${data.length} to ${compressedString.length} characters');
+
+    return compressedString;
   }
 
   /// Decompresses the given base64-encoded compressed string.
@@ -66,6 +127,41 @@ class Compression {
       return decompressedString;
     } catch (e) {
       _log.warning('Failed to decompress string: $e');
+      // Return the original data if decompression fails
+      return compressedData;
+    }
+  }
+
+  /// Decompresses the given base64-encoded compressed string asynchronously.
+  ///
+  /// Returns the decompressed string.
+  /// For large strings (above [_asyncThreshold]), this is done in a separate isolate
+  /// to avoid blocking the main thread.
+  Future<String> decompressStringAsync(String compressedData) async {
+    try {
+      // For small strings, decompress synchronously
+      if (compressedData.length < _asyncThreshold) {
+        return decompressString(compressedData);
+      }
+
+      // For large strings, decompress in a separate isolate
+      _log.fine(
+          'Decompressing large string (${compressedData.length} chars) in isolate');
+
+      // Create a message to send to the isolate
+      final message = _DecompressionMessage(
+        compressedString: compressedData,
+      );
+
+      // Decompress in isolate
+      final result = await Isolate.run(() => _decompressInIsolate(message));
+
+      _log.fine(
+          'Decompressed string from ${compressedData.length} to ${result.length} characters in isolate');
+
+      return result;
+    } catch (e) {
+      _log.warning('Failed to decompress string asynchronously: $e');
       // Return the original data if decompression fails
       return compressedData;
     }
@@ -161,4 +257,36 @@ class Compression {
   double log2(double value) {
     return math.log(value) / math.ln2;
   }
+
+  /// Compresses a string in an isolate.
+  static String _compressInIsolate(_CompressionMessage message) {
+    final compression = Compression(level: message.level);
+    return compression._compressStringSync(message.data);
+  }
+
+  /// Decompresses a string in an isolate.
+  static String _decompressInIsolate(_DecompressionMessage message) {
+    final compression = Compression();
+    return compression.decompressString(message.compressedString);
+  }
+}
+
+/// A message for compression in an isolate.
+class _CompressionMessage {
+  final String data;
+  final int level;
+
+  _CompressionMessage({
+    required this.data,
+    required this.level,
+  });
+}
+
+/// A message for decompression in an isolate.
+class _DecompressionMessage {
+  final String compressedString;
+
+  _DecompressionMessage({
+    required this.compressedString,
+  });
 }

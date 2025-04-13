@@ -5,8 +5,10 @@ import 'package:data_cache_x/models/cache_item.dart';
 import 'package:data_cache_x/models/cache_policy.dart';
 import 'package:data_cache_x/utils/cache_eviction.dart';
 import 'package:data_cache_x/utils/compression.dart';
+import 'package:data_cache_x/utils/size_estimator.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:logging/logging.dart';
+import 'dart:async';
 
 /// The main class for interacting with the cache.
 ///
@@ -184,10 +186,133 @@ class DataCacheX {
         compressionRatio: compressionRatio,
       );
 
-      // This is a simple estimation of the size, not exact
-      final jsonString = cacheItem.toJson().toString();
-      final estimatedSize =
-          jsonString.length * 2; // Rough estimate: 2 bytes per character
+      // Use the SizeEstimator for more accurate size estimation
+      final estimatedSize = SizeEstimator.estimateCacheItemSize(
+        finalValue,
+        hasExpiry: effectiveExpiry != null,
+        hasSlidingExpiry: effectiveSlidingExpiry != null,
+        isCompressed: isCompressed,
+        originalSize: originalSize,
+      );
+
+      // Check if the item exceeds the maximum size (if specified)
+      if (effectivePolicy.maxSize != null) {
+        if (estimatedSize > effectivePolicy.maxSize!) {
+          _log.warning(
+              'Item exceeds maximum size: $estimatedSize > ${effectivePolicy.maxSize}');
+          throw CacheException(
+              'Item exceeds maximum size: $estimatedSize > ${effectivePolicy.maxSize}');
+        }
+      }
+
+      // Record the put operation in analytics
+      _analytics.recordPut(key, estimatedSize);
+
+      await _cacheAdapter.put(key, cacheItem);
+
+      // Check if we need to evict items
+      if (_eviction != null) {
+        await _eviction.checkAndEvict();
+      }
+    } on HiveError catch (e) {
+      _log.severe('Failed to put data into cache (HiveError): $e');
+      throw CacheException('Failed to put data into cache: ${e.message}');
+    } catch (e) {
+      _log.severe('Failed to put data into cache (Unknown Error): $e');
+      throw CacheException('Failed to put data into cache: $e');
+    }
+  }
+
+  /// Stores a value in the cache with the given [key] asynchronously.
+  ///
+  /// This method is similar to [put], but uses asynchronous compression for large strings,
+  /// which can improve performance by avoiding blocking the main thread.
+  ///
+  /// The [expiry] parameter can be used to set an optional expiry time for the data.
+  /// The [slidingExpiry] parameter can be used to set an optional sliding expiry time for the data.
+  /// The [policy] parameter can be used to set a cache policy for the data.
+  ///
+  /// If both individual parameters (expiry, slidingExpiry) and a policy are provided,
+  /// the individual parameters will take precedence over the policy.
+  ///
+  /// Throws an [ArgumentError] if the key is empty.
+  /// Throws a [CacheException] if there is an error storing the data.
+  Future<void> putAsync<T>(String key, T value,
+      {Duration? expiry, Duration? slidingExpiry, CachePolicy? policy}) async {
+    if (key.isEmpty) {
+      throw ArgumentError('Key cannot be empty');
+    }
+    try {
+      final effectivePolicy = policy ?? CachePolicy.defaultPolicy;
+      final effectiveExpiry = expiry ?? effectivePolicy.expiry;
+      final effectiveSlidingExpiry =
+          slidingExpiry ?? effectivePolicy.slidingExpiry;
+
+      // Apply encryption if needed
+      if (effectivePolicy.encrypt && !_cacheAdapter.enableEncryption) {
+        _log.warning(
+            'Encryption requested but not supported by the adapter. Data will be stored unencrypted.');
+      }
+
+      // Apply compression if needed
+      dynamic finalValue = value;
+      bool isCompressed = false;
+      int? originalSize;
+      double? compressionRatio;
+
+      if (effectivePolicy.compression != CompressionMode.never &&
+          _compression != null &&
+          value is String) {
+        // For auto mode, check if compression is beneficial
+        if (effectivePolicy.compression == CompressionMode.auto) {
+          if (_compression.shouldCompress(value)) {
+            // Compress the value asynchronously
+            originalSize = value.length * 2;
+            final compressedValue =
+                await _compression.compressStringAsync(value);
+            compressionRatio = originalSize / (compressedValue.length * 2);
+
+            // Only use compression if it actually reduces the size
+            if (compressionRatio > 1.1) {
+              // At least 10% reduction
+              finalValue = compressedValue;
+              isCompressed = true;
+              _log.fine(
+                  'Compressed value for key $key with ratio $compressionRatio');
+            }
+          }
+        } else if (effectivePolicy.compression == CompressionMode.always) {
+          // Always compress
+          originalSize = value.length * 2;
+          final compressedValue = await _compression.compressStringAsync(value);
+          compressionRatio = originalSize / (compressedValue.length * 2);
+          finalValue = compressedValue;
+          isCompressed = true;
+          _log.fine(
+              'Compressed value for key $key with ratio $compressionRatio');
+        }
+      }
+
+      final cacheItem = CacheItem<T>(
+        value: finalValue as T,
+        expiry: effectiveExpiry != null
+            ? DateTime.now().add(effectiveExpiry)
+            : null,
+        slidingExpiry: effectiveSlidingExpiry,
+        priority: effectivePolicy.priority,
+        isCompressed: isCompressed,
+        originalSize: originalSize,
+        compressionRatio: compressionRatio,
+      );
+
+      // Use the SizeEstimator for more accurate size estimation
+      final estimatedSize = SizeEstimator.estimateCacheItemSize(
+        finalValue,
+        hasExpiry: effectiveExpiry != null,
+        hasSlidingExpiry: effectiveSlidingExpiry != null,
+        isCompressed: isCompressed,
+        originalSize: originalSize,
+      );
 
       // Check if the item exceeds the maximum size (if specified)
       if (effectivePolicy.maxSize != null) {
@@ -329,6 +454,121 @@ class DataCacheX {
     }
   }
 
+  /// Retrieves the value associated with the given [key] asynchronously.
+  ///
+  /// This method is similar to [get], but uses asynchronous decompression for large strings,
+  /// which can improve performance by avoiding blocking the main thread.
+  ///
+  /// Returns `null` if no value is found for the given [key] or if the value is expired.
+  ///
+  /// If [refreshCallback] is provided and the item is stale according to its policy,
+  /// the callback will be used to refresh the data based on the refresh strategy.
+  ///
+  /// Throws an [ArgumentError] if the key is empty.
+  /// Throws a [CacheException] if there is an error retrieving the data.
+  Future<T?> getAsync<T>(String key,
+      {Future<T> Function()? refreshCallback, CachePolicy? policy}) async {
+    if (key.isEmpty) {
+      throw ArgumentError('Key cannot be empty');
+    }
+    try {
+      final cacheItem = await _cacheAdapter.get(key);
+      if (cacheItem == null) {
+        // Record cache miss in analytics
+        _analytics.recordMiss(key);
+
+        // If a refresh callback is provided, use it to get fresh data
+        if (refreshCallback != null) {
+          final freshValue = await refreshCallback();
+          await putAsync(key, freshValue, policy: policy);
+          return freshValue;
+        }
+
+        return null;
+      }
+
+      if (cacheItem.isExpired) {
+        // Record cache miss in analytics
+        _analytics.recordMiss(key);
+        await delete(key);
+
+        // If a refresh callback is provided, use it to get fresh data
+        if (refreshCallback != null) {
+          final freshValue = await refreshCallback();
+          await putAsync(key, freshValue, policy: policy);
+          return freshValue;
+        }
+
+        return null;
+      }
+
+      // Check if the item is stale and needs refreshing
+      final effectivePolicy = policy ?? CachePolicy.defaultPolicy;
+      if (refreshCallback != null &&
+          effectivePolicy.staleTime != null &&
+          cacheItem.isStale(effectivePolicy.staleTime!)) {
+        // Handle different refresh strategies
+        switch (effectivePolicy.refreshStrategy) {
+          case RefreshStrategy.backgroundRefresh:
+            // Update in the background without blocking
+            _refreshInBackgroundAsync(key, refreshCallback, effectivePolicy);
+            break;
+          case RefreshStrategy.immediateRefresh:
+            // Refresh immediately and return the fresh value
+            final freshValue = await refreshCallback();
+            await putAsync(key, freshValue, policy: effectivePolicy);
+            return freshValue;
+          case RefreshStrategy.never:
+            // Do nothing, just use the cached value
+            break;
+        }
+      }
+
+      // Update sliding expiry if needed
+      // Decompress the value if it's compressed
+      T? resultValue;
+      if (cacheItem.isCompressed &&
+          _compression != null &&
+          cacheItem.value is String) {
+        try {
+          final decompressedValue = await _compression
+              .decompressStringAsync(cacheItem.value as String);
+          resultValue = decompressedValue as T?;
+          _log.fine('Decompressed value for key $key');
+        } catch (e) {
+          _log.warning('Failed to decompress value for key $key: $e');
+          resultValue = cacheItem.value as T?;
+        }
+      } else {
+        resultValue = cacheItem.value as T?;
+      }
+
+      if (cacheItem.slidingExpiry != null) {
+        final updatedCacheItem = cacheItem.updateExpiry();
+        await _cacheAdapter.put(key, updatedCacheItem);
+        // Record cache hit in analytics
+        _analytics.recordHit(key);
+        return resultValue;
+      }
+
+      // Update access metadata
+      final updatedCacheItem = cacheItem.updateExpiry();
+      if (updatedCacheItem != cacheItem) {
+        await _cacheAdapter.put(key, updatedCacheItem);
+      }
+
+      // Record cache hit in analytics
+      _analytics.recordHit(key);
+      return resultValue;
+    } on HiveError catch (e) {
+      _log.severe('Failed to get data from cache (HiveError): $e');
+      throw CacheException('Failed to get data from cache: ${e.message}');
+    } catch (e) {
+      _log.severe('Failed to get data from cache (Unknown Error): $e');
+      throw CacheException('Failed to get data from cache: $e');
+    }
+  }
+
   /// Refreshes a cache item in the background without blocking the caller.
   Future<void> _refreshInBackground<T>(String key,
       Future<T> Function() refreshCallback, CachePolicy policy) async {
@@ -338,6 +578,18 @@ class DataCacheX {
       _log.info('Background refresh completed for key: $key');
     } catch (e) {
       _log.warning('Background refresh failed for key: $key - $e');
+    }
+  }
+
+  /// Refreshes a cache item in the background without blocking the caller using async methods.
+  Future<void> _refreshInBackgroundAsync<T>(String key,
+      Future<T> Function() refreshCallback, CachePolicy policy) async {
+    try {
+      final freshValue = await refreshCallback();
+      await putAsync(key, freshValue, policy: policy);
+      _log.info('Background refresh completed for key: $key (async)');
+    } catch (e) {
+      _log.warning('Background refresh failed for key: $key - $e (async)');
     }
   }
 
@@ -506,10 +758,14 @@ class DataCacheX {
 
         // Check if the item exceeds the maximum size (if specified)
         if (effectivePolicy.maxSize != null) {
-          // This is a simple estimation of the size, not exact
-          final jsonString = cacheItem.toJson().toString();
-          final estimatedSize =
-              jsonString.length * 2; // Rough estimate: 2 bytes per character
+          // Use the SizeEstimator for more accurate size estimation
+          final estimatedSize = SizeEstimator.estimateCacheItemSize(
+            finalValue,
+            hasExpiry: expiryTime != null,
+            hasSlidingExpiry: effectiveSlidingExpiry != null,
+            isCompressed: isCompressed,
+            originalSize: originalSize,
+          );
 
           if (estimatedSize > effectivePolicy.maxSize!) {
             _log.warning(
