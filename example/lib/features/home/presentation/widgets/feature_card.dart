@@ -31,7 +31,7 @@ class FeatureCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withAlpha(26), // 0.1 * 255 = 26
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
@@ -51,15 +51,17 @@ class FeatureCard extends StatelessWidget {
               Text(
                 description,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onBackground.withOpacity(0.7),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withAlpha(179), // 0.7 * 255 = 179
                     ),
               ),
             ],
           ),
         ),
       ),
-    ).animate()
-      .fadeIn(duration: 300.ms, delay: 100.ms)
-      .slideY(begin: 0.2, end: 0, duration: 300.ms, curve: Curves.easeOutQuad);
+    ).animate().fadeIn(duration: 300.ms, delay: 100.ms).slideY(
+        begin: 0.2, end: 0, duration: 300.ms, curve: Curves.easeOutQuad);
   }
 }

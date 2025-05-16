@@ -177,10 +177,7 @@ class Compression {
     // Compress the bytes
     final compressedBytes = encoder.encode(bytes, level: _level);
 
-    if (compressedBytes == null) {
-      throw Exception('Compression failed');
-    }
-
+    // Return the compressed bytes
     return Uint8List.fromList(compressedBytes);
   }
 

@@ -1,7 +1,8 @@
+// ignore_for_file: avoid_print
+
 import 'package:data_cache_x/data_cache_x.dart';
 import 'package:data_cache_x/service_locator.dart';
 import 'package:data_cache_x/utils/benchmark.dart';
-import 'package:data_cache_x/models/cache_policy.dart';
 import 'package:logging/logging.dart';
 
 /// This example demonstrates how to use the benchmarking tool to measure

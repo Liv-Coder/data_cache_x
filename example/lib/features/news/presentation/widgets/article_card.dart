@@ -63,8 +63,8 @@ class ArticleCard extends StatelessWidget {
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Theme.of(context)
                                   .colorScheme
-                                  .onBackground
-                                  .withOpacity(0.6),
+                                  .onSurface
+                                  .withAlpha(153), // 0.6 * 255 = 153
                             ),
                       ),
                     ],
@@ -82,8 +82,8 @@ class ArticleCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context)
                               .colorScheme
-                              .onBackground
-                              .withOpacity(0.8),
+                              .onSurface
+                              .withAlpha(204), // 0.8 * 255 = 204
                         ),
                     maxLines: 3,
                     overflow: TextOverflow.ellipsis,
@@ -93,8 +93,10 @@ class ArticleCard extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 12,
-                        backgroundColor:
-                            Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withAlpha(26), // 0.1 * 255 = 26
                         child: Text(
                           article.author.isNotEmpty
                               ? article.author[0].toUpperCase()
@@ -109,9 +111,10 @@ class ArticleCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           article.author,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.w500,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontWeight: FontWeight.w500,
+                                  ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -130,9 +133,8 @@ class ArticleCard extends StatelessWidget {
           ],
         ),
       ),
-    ).animate()
-      .fadeIn(duration: 300.ms, delay: 100.ms)
-      .slideY(begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOutQuad);
+    ).animate().fadeIn(duration: 300.ms, delay: 100.ms).slideY(
+        begin: 0.1, end: 0, duration: 300.ms, curve: Curves.easeOutQuad);
   }
 
   String _formatDate(String dateString) {

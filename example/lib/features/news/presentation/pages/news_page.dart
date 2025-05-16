@@ -126,7 +126,10 @@ class _NewsPageContent extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withAlpha(26), // 0.1 * 255 = 26
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -221,7 +224,7 @@ class _CategoryTab extends StatelessWidget {
           borderRadius: BorderRadius.circular(25),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withAlpha(13), // 0.05 * 255 = 13
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),

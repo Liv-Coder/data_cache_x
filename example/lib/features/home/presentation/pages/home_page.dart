@@ -36,7 +36,7 @@ class HomePage extends StatelessWidget {
                     color: Theme.of(context)
                         .colorScheme
                         .onSurface
-                        .withOpacity(0.7),
+                        .withAlpha(179), // 0.7 * 255 = 179
                   ),
             ),
             const SizedBox(height: 24),
