@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:data_cache_x/core/data_cache_x.dart';
 import 'package:data_cache_x/models/cache_item.dart';
 import 'package:data_cache_x/models/cache_policy.dart';
-import 'package:data_cache_x/utils/isolate_runner.dart';
 import 'package:logging/logging.dart';
 
 /// Defines the type of cache synchronization event.
