@@ -8,6 +8,7 @@ class Article {
   final String url;
   final String imageUrl;
   final String source;
+  final Set<String> tags;
 
   Article({
     required this.id,
@@ -19,9 +20,16 @@ class Article {
     required this.url,
     required this.imageUrl,
     required this.source,
+    this.tags = const {},
   });
 
   factory Article.fromJson(Map<String, dynamic> json) {
+    // Handle tags from JSON
+    Set<String> tags = {};
+    if (json['tags'] != null) {
+      tags = Set<String>.from(json['tags']);
+    }
+
     return Article(
       id: json['id'] ?? '',
       title: json['title'] ?? '',
@@ -32,6 +40,7 @@ class Article {
       url: json['url'] ?? '',
       imageUrl: json['urlToImage'] ?? '',
       source: json['source']?['name'] ?? 'Unknown',
+      tags: tags,
     );
   }
 
@@ -46,6 +55,7 @@ class Article {
       'url': url,
       'urlToImage': imageUrl,
       'source': {'name': source},
+      'tags': tags.toList(),
     };
   }
 }

@@ -1,6 +1,6 @@
 name: data_cache_x
 description: "A Flutter package for efficient offline data caching and synchronization with enhanced security features and tag-based cache management."
-version: 0.2.0
+version: 1.0.0
 
 homepage: https://github.com/Liv-Coder
 repository: https://github.com/Liv-Coder/data_cache_x

@@ -41,6 +41,7 @@ export 'package:data_cache_x/adapters/memory_adapter.dart';
 // Models
 export 'package:data_cache_x/models/cache_item.dart';
 export 'package:data_cache_x/models/cache_policy.dart';
+export 'package:data_cache_x/models/batch_process_data.dart';
 
 // Analytics
 export 'package:data_cache_x/analytics/cache_analytics.dart';
@@ -55,3 +56,7 @@ export 'package:data_cache_x/serializers/data_serializer.dart';
 // Utils
 export 'package:data_cache_x/utils/background_cleanup.dart';
 export 'package:data_cache_x/utils/time_helper.dart';
+export 'package:data_cache_x/utils/isolate_runner.dart';
+export 'package:data_cache_x/utils/cache_synchronizer.dart';
+export 'package:data_cache_x/utils/eviction_scheduler.dart';
+export 'package:data_cache_x/utils/cache_preloader.dart';

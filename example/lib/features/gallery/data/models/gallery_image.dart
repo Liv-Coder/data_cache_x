@@ -8,6 +8,7 @@ class GalleryImage {
   final int width;
   final int height;
   final bool isFavorite;
+  final Set<String> tags;
 
   GalleryImage({
     required this.id,
@@ -19,9 +20,16 @@ class GalleryImage {
     required this.width,
     required this.height,
     this.isFavorite = false,
+    this.tags = const {},
   });
 
   factory GalleryImage.fromJson(Map<String, dynamic> json) {
+    // Handle tags from JSON
+    Set<String> tags = {};
+    if (json['tags'] != null) {
+      tags = Set<String>.from(json['tags']);
+    }
+
     return GalleryImage(
       id: json['id'],
       url: json['url'],
@@ -32,6 +40,7 @@ class GalleryImage {
       width: json['width'],
       height: json['height'],
       isFavorite: json['isFavorite'] ?? false,
+      tags: tags,
     );
   }
 
@@ -46,6 +55,7 @@ class GalleryImage {
       'width': width,
       'height': height,
       'isFavorite': isFavorite,
+      'tags': tags.toList(),
     };
   }
 
@@ -59,6 +69,7 @@ class GalleryImage {
     int? width,
     int? height,
     bool? isFavorite,
+    Set<String>? tags,
   }) {
     return GalleryImage(
       id: id ?? this.id,
@@ -70,6 +81,7 @@ class GalleryImage {
       width: width ?? this.width,
       height: height ?? this.height,
       isFavorite: isFavorite ?? this.isFavorite,
+      tags: tags ?? this.tags,
     );
   }
 }

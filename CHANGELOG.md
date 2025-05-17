@@ -1,15 +1,45 @@
 # Changelog
 
-## 0.1.6 (Upcoming)
+## 1.0.0 (Unreleased)
 
-- Added enhanced encryption support with AES-256
-- Implemented secure key storage with flutter_secure_storage
-- Added key derivation from passwords using PBKDF2
-- Introduced tag-based cache management for selective invalidation
-- Added methods to retrieve, delete, and manage cache items by tags
-- Enhanced security with configurable encryption options
-- Improved encryption key management with secure random key generation
-- Updated all adapters to support the new encryption and tagging features
+- Implemented comprehensive tag-based cache management system
+  - Added support for tagging cache items with multiple labels
+  - Implemented methods for retrieving items by tag or tag combinations
+  - Added support for tag-based operations (getByTag, deleteByTag)
+  - Enhanced models to include tag fields and serialization support
+- Added batch operations for improved performance
+  - Implemented putAll, getAll, and deleteAll methods
+  - Added BatchProcessData model for tracking batch operations
+  - Optimized batch operations in all adapters
+  - Added benchmarking tools for comparing standard vs batch operations
+- Implemented advanced cache synchronization
+  - Added SyncRepository for managing sync operations
+  - Created SyncBloc for handling sync state management
+  - Developed SyncPage UI for displaying sync status and controls
+  - Integrated sync feature with main app navigation
+- Enhanced eviction scheduling capabilities
+  - Added ScheduleType enum (periodic, scheduled, onIdle, inBackground)
+  - Implemented time-based scheduling for cache cleanup
+  - Added UI controls for configuring scheduled eviction times
+  - Enhanced CacheSettings model with eviction scheduling properties
+- Enhanced example app with new features
+  - Added tag support to Image Gallery feature
+    - Updated GalleryImage model with tags field
+    - Implemented tag filtering and management in UI
+    - Added tag visualization on image cards
+  - Added tag support to News Feed feature
+    - Updated Article model with tags field
+    - Implemented cross-category content discovery through tags
+    - Added tag filtering interface
+  - Enhanced Playground feature with batch operation benchmarking
+    - Added UI controls for selecting and running batch benchmarks
+    - Implemented visual comparison of standard vs batch performance
+  - Added Settings feature with eviction scheduling configuration
+    - Created UI for configuring scheduled eviction times
+    - Implemented time picker for precise scheduling
+  - Enhanced repositories with tag-based operations
+  - Updated BLoCs to handle tag-related events and states
+- Improved documentation with usage examples for all new features
 
 ## 0.1.5
 

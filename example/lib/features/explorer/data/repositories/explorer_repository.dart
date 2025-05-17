@@ -24,6 +24,9 @@ class ExplorerRepository {
         // Try to get the value to check if it exists and isn't expired
         final value = await _cache.get(key);
         if (value != null) {
+          // Try to get tags for this key
+          final tags = await _getTagsForKey(key);
+
           entries.add(
             CacheEntry(
               key: key,
@@ -36,6 +39,7 @@ class ExplorerRepository {
               priority: CachePriority.normal, // Default
               isCompressed: false, // We don't know
               isEncrypted: false, // We don't know
+              tags: tags,
             ),
           );
         }
@@ -53,6 +57,9 @@ class ExplorerRepository {
         // Try to get the value to check if it exists and isn't expired
         final value = await _cache.get(key);
         if (value != null) {
+          // Try to get tags for this key
+          final tags = await _getTagsForKey(key);
+
           entries.add(
             CacheEntry(
               key: key,
@@ -65,6 +72,7 @@ class ExplorerRepository {
               priority: CachePriority.normal, // Default
               isCompressed: false, // We don't know
               isEncrypted: false, // We don't know
+              tags: tags,
             ),
           );
         }
@@ -82,6 +90,9 @@ class ExplorerRepository {
         // Try to get the value to check if it exists and isn't expired
         final value = await _cache.get(key);
         if (value != null) {
+          // Try to get tags for this key
+          final tags = await _getTagsForKey(key);
+
           entries.add(
             CacheEntry(
               key: key,
@@ -94,6 +105,7 @@ class ExplorerRepository {
               priority: CachePriority.normal, // Default
               isCompressed: false, // We don't know
               isEncrypted: false, // We don't know
+              tags: tags,
             ),
           );
         }
@@ -105,6 +117,30 @@ class ExplorerRepository {
       return entries;
     } catch (e) {
       return [];
+    }
+  }
+
+  /// Helper method to get tags for a key
+  Future<Set<String>> _getTagsForKey(String key) async {
+    try {
+      // This is a workaround since we don't have direct access to tags
+      // In a real implementation, we would use the adapter's API to get tags
+
+      // Try to find tags by checking if this key is returned by getKeysByTag
+      // for each known tag
+      final allTags = await getAllTags();
+      final keyTags = <String>{};
+
+      for (final tag in allTags) {
+        final keys = await _cache.getKeysByTag(tag);
+        if (keys.contains(key)) {
+          keyTags.add(tag);
+        }
+      }
+
+      return keyTags;
+    } catch (e) {
+      return {};
     }
   }
 
@@ -159,6 +195,10 @@ class ExplorerRepository {
       final entries = await getAllEntries();
       final totalEntries = entries.length;
 
+      // Get all tags
+      final allTags = await getAllTags();
+      final tagCount = allTags.length;
+
       // We don't have direct access to compression and encryption info
       // so we'll just return 0 for these values
       const compressedCount = 0;
@@ -169,6 +209,7 @@ class ExplorerRepository {
         'totalSize': totalSize,
         'compressedCount': compressedCount,
         'encryptedCount': encryptedCount,
+        'tagCount': tagCount,
       };
     } catch (e) {
       return {
@@ -176,7 +217,96 @@ class ExplorerRepository {
         'totalSize': 0,
         'compressedCount': 0,
         'encryptedCount': 0,
+        'tagCount': 0,
       };
+    }
+  }
+
+  /// Gets all available tags in the cache
+  Future<Set<String>> getAllTags() async {
+    try {
+      // This is a sample implementation with some common tags
+      // In a real implementation, we would scan all cache items for their tags
+      final sampleTags = <String>{
+        'user',
+        'settings',
+        'profile',
+        'data',
+        'image',
+        'temp',
+        'config',
+        'api',
+        'response',
+        'favorite'
+      };
+
+      // Check which tags actually have keys associated with them
+      final validTags = <String>{};
+      for (final tag in sampleTags) {
+        final keys = await _cache.getKeysByTag(tag);
+        if (keys.isNotEmpty) {
+          validTags.add(tag);
+        }
+      }
+
+      return validTags;
+    } catch (e) {
+      return {};
+    }
+  }
+
+  /// Gets entries by tag
+  Future<List<CacheEntry>> getEntriesByTag(String tag) async {
+    try {
+      final keys = await _cache.getKeysByTag(tag);
+      final entries = <CacheEntry>[];
+
+      for (final key in keys) {
+        final value = await _cache.get(key);
+        if (value != null) {
+          // Get all tags for this key
+          final tags = await _getTagsForKey(key);
+
+          // Get size if available
+          int size = 0;
+          final largestItems = _cache.largestItems;
+          for (final item in largestItems) {
+            if (item.key == key) {
+              size = item.value;
+              break;
+            }
+          }
+
+          entries.add(
+            CacheEntry(
+              key: key,
+              size: size,
+              createdAt: DateTime.now().subtract(const Duration(days: 1)),
+              expiresAt: null,
+              lastAccessedAt: DateTime.now(),
+              accessCount: 1,
+              priority: CachePriority.normal,
+              isCompressed: false,
+              isEncrypted: false,
+              tags: tags,
+            ),
+          );
+        }
+      }
+
+      return entries;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  /// Deletes entries by tag
+  Future<bool> deleteByTag(String tag) async {
+    try {
+      await _cache.deleteByTag(tag);
+      return true;
+    } catch (e) {
+      return false;
     }
   }
 }

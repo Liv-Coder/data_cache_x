@@ -105,6 +105,14 @@ class _GalleryPageContent extends StatelessWidget {
                     .read<GalleryBloc>()
                     .add(ToggleFavoriteEvent(image.id)),
                 onDelete: () => _confirmDeleteImage(context, image.id),
+                onTagTap: (tag) =>
+                    context.read<GalleryBloc>().add(FilterByTagEvent(tag)),
+                onAddTag: (tag) => context.read<GalleryBloc>().add(
+                      AddTagEvent(imageId: image.id, tag: tag),
+                    ),
+                onRemoveTag: (tag) => context.read<GalleryBloc>().add(
+                      RemoveTagEvent(imageId: image.id, tag: tag),
+                    ),
               );
             },
           ),
@@ -126,51 +134,106 @@ class _GalleryPageContent extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${state.imageCount} Images',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${state.imageCount} Images',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Total Size: ${_formatBytes(state.totalSize)}',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Total Size: ${_formatBytes(state.totalSize)}',
-                  style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withAlpha(30),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-              ],
-            ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Ionicons.star,
+                      size: 16,
+                      color: Colors.amber,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${state.images.where((img) => img.isFavorite).length} Favorites',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withAlpha(30),
-              borderRadius: BorderRadius.circular(16),
+          if (state.availableTags.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            _buildTagFilter(context, state),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTagFilter(BuildContext context, GalleryLoaded state) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Filter by Tag:',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
-            child: Row(
-              children: [
-                const Icon(
-                  Ionicons.star,
-                  size: 16,
-                  color: Colors.amber,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  '${state.images.where((img) => img.isFavorite).length} Favorites',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-              ],
+            const SizedBox(width: 8),
+            if (state.activeTagFilter != null)
+              Chip(
+                label: Text('#${state.activeTagFilter}'),
+                deleteIcon: const Icon(Ionicons.close_outline, size: 16),
+                onDeleted: () =>
+                    context.read<GalleryBloc>().add(ClearTagFilterEvent()),
+              ),
+          ],
+        ),
+        if (state.activeTagFilter == null) ...[
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 32,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              children: state.availableTags.map((tag) {
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ActionChip(
+                    label: Text('#$tag'),
+                    onPressed: () =>
+                        context.read<GalleryBloc>().add(FilterByTagEvent(tag)),
+                  ),
+                );
+              }).toList(),
             ),
           ),
         ],
-      ),
+      ],
     );
   }
 
@@ -251,6 +314,7 @@ class _GalleryPageContent extends StatelessWidget {
               Text('• Caching images with different policies'),
               Text('• Compression of image data based on size'),
               Text('• Priority-based caching for favorites'),
+              Text('• Tag-based organization and filtering'),
               Text('• Offline image viewing'),
               SizedBox(height: 16),
               Text(

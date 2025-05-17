@@ -32,6 +32,10 @@
 - **Performance Analytics**: Track cache performance with built-in metrics
 - **Type Safety**: Full support for generic types and complex data structures
 - **Extensibility**: Easy to extend with custom adapters and serializers
+- **Batch Operations**: Efficiently process multiple items at once for improved performance
+- **Cache Synchronization**: Keep multiple cache instances in sync with advanced sync controls
+- **Advanced Eviction Scheduling**: Fine-grained control over when and how cache cleanup happens, including time-based scheduling
+- **Cache Preloading**: Proactively load data into the cache before it's needed
 
 ## 🚀 Installation
 
@@ -113,7 +117,7 @@ await dataCache.putAll({
   'user': currentUser,
   'settings': appSettings,
   'theme': currentTheme,
-}, expiry: Duration(days: 7));
+}, policy: CachePolicy(expiry: Duration(days: 7)));
 
 // Retrieve multiple values
 final values = await dataCache.getAll<dynamic>([
@@ -122,6 +126,23 @@ final values = await dataCache.getAll<dynamic>([
 
 // Delete multiple values
 await dataCache.deleteAll(['user', 'settings', 'theme']);
+
+// Track batch operation performance
+final batchStats = await dataCache.getBatchStats();
+print('Average batch write time: ${batchStats.avgWriteTime}ms');
+print('Average batch read time: ${batchStats.avgReadTime}ms');
+print('Batch operation count: ${batchStats.operationCount}');
+
+// Compare batch vs individual operations
+final benchmark = AdapterBenchmark(
+  itemCount: 1000,
+  itemSize: 500,
+  benchmarkType: BenchmarkType.batch,
+);
+final result = await benchmarkService.runBenchmark('hive', benchmark);
+print('Batch write time: ${result.writeTime}ms');
+print('Standard write time: ${result.standardWriteTime}ms');
+print('Performance improvement: ${result.performanceImprovement}%');
 ```
 
 ### Advanced Caching Policies
@@ -272,6 +293,55 @@ final ttlCache = DataCacheX(
 );
 ```
 
+### Advanced Eviction Scheduling
+
+```dart
+import 'package:data_cache_x/data_cache_x.dart';
+import 'package:get_it/get_it.dart';
+
+// Get the settings repository
+final settingsRepo = GetIt.instance<SettingsRepository>();
+
+// Configure periodic eviction (runs at regular intervals)
+final periodicSettings = CacheSettings(
+  evictionScheduleType: ScheduleType.periodic,
+  cleanupFrequency: Duration(minutes: 30),
+  evictionStrategy: EvictionStrategy.lru,
+);
+await settingsRepo.saveSettings(periodicSettings);
+
+// Configure scheduled eviction (runs at specific times)
+final scheduledSettings = CacheSettings(
+  evictionScheduleType: ScheduleType.scheduled,
+  scheduledTimes: ['03:00', '15:00'], // Run at 3 AM and 3 PM
+  evictionStrategy: EvictionStrategy.lru,
+);
+await settingsRepo.saveSettings(scheduledSettings);
+
+// Configure idle-based eviction (runs when app is idle)
+final idleSettings = CacheSettings(
+  evictionScheduleType: ScheduleType.onIdle,
+  evictionStrategy: EvictionStrategy.lfu,
+);
+await settingsRepo.saveSettings(idleSettings);
+
+// Configure background eviction (runs when app is in background)
+final backgroundSettings = CacheSettings(
+  evictionScheduleType: ScheduleType.inBackground,
+  evictionStrategy: EvictionStrategy.ttl,
+);
+await settingsRepo.saveSettings(backgroundSettings);
+
+// Add a new scheduled time
+final currentSettings = await settingsRepo.getSettings();
+final updatedTimes = List<String>.from(currentSettings.scheduledTimes)..add('21:00');
+final updatedSettings = currentSettings.copyWith(scheduledTimes: updatedTimes);
+await settingsRepo.saveSettings(updatedSettings);
+
+// Run eviction immediately
+await settingsRepo.runEvictionNow();
+```
+
 ### Data Compression
 
 ```dart
@@ -341,6 +411,108 @@ BackgroundCleanup.stopBackgroundCleanup();
 BackgroundCleanup.performCleanup(cacheAdapter);
 ```
 
+### Cache Synchronization
+
+```dart
+import 'package:data_cache_x/data_cache_x.dart';
+import 'package:get_it/get_it.dart';
+
+// Get the sync repository
+final syncRepo = GetIt.instance<SyncRepository>();
+
+// Start synchronization process
+await syncRepo.startSync();
+
+// Check sync status
+final bool isInSync = await syncRepo.checkSyncStatus();
+
+// Force synchronization of specific keys
+await syncRepo.syncItems(['user_profile', 'settings']);
+
+// Listen for sync events
+syncRepo.syncEvents.listen((SyncEvent event) {
+  print('Sync event: ${event.type} - ${event.message}');
+
+  if (event.type == SyncEventType.completed) {
+    print('Sync completed successfully!');
+  } else if (event.type == SyncEventType.error) {
+    print('Sync error: ${event.error}');
+  }
+});
+
+// Pause synchronization
+await syncRepo.pauseSync();
+
+// Resume synchronization
+await syncRepo.resumeSync();
+
+// Stop synchronization
+await syncRepo.stopSync();
+
+// Get sync statistics
+final stats = await syncRepo.getSyncStats();
+print('Total synced items: ${stats.totalSyncedItems}');
+print('Last sync time: ${stats.lastSyncTime}');
+print('Sync success rate: ${stats.successRate}%');
+```
+
+### Cache Preloading
+
+```dart
+import 'package:data_cache_x/data_cache_x.dart';
+
+// Create a cache instance
+final cache = DataCacheX(...);
+
+// Create a preloader
+final preloader = CachePreloader(cache);
+
+// Define data providers
+final dataProviders = <String, Future<dynamic> Function()>{
+  'user_profile': () => fetchUserProfile(),
+  'app_settings': () => fetchAppSettings(),
+  'recent_items': () => fetchRecentItems(),
+};
+
+// Preload the data
+final operations = await preloader.preload(dataProviders: dataProviders);
+
+// Preload with a policy
+await preloader.preload(
+  dataProviders: dataProviders,
+  policy: CachePolicy(
+    expiry: Duration(days: 1),
+    priority: CachePriority.high,
+  ),
+);
+
+// Preload with tags
+await preloader.preload(
+  dataProviders: dataProviders,
+  tags: {'preloaded', 'initial_data'},
+);
+
+// Preload in the background
+final stream = preloader.preloadInBackground(
+  dataProviders: dataProviders,
+  onProgress: (key, status, progress) {
+    print('$key: $status - ${(progress * 100).toStringAsFixed(1)}%');
+  },
+);
+
+// Cancel a specific preload operation
+preloader.cancelPreload('user_profile');
+
+// Cancel all preload operations
+preloader.cancelAllPreloads();
+
+// Clear completed operations to free up memory
+preloader.clearCompletedOperations();
+
+// Dispose the preloader when done
+preloader.dispose();
+```
+
 ### Custom Adapters and Serializers
 
 ```dart
@@ -381,12 +553,13 @@ await setupDataCacheX(
 
 The package includes a comprehensive example app (CacheHub) that demonstrates all features:
 
-- **News Feed**: API caching with different policies
-- **Image Gallery**: Binary data caching for images
+- **News Feed**: API caching with different policies and tag-based content discovery
+- **Image Gallery**: Binary data caching for images with tag-based organization
 - **Analytics**: Cache performance visualization
-- **Explorer**: Browse and manipulate cached data
-- **Adapter Playground**: Benchmark different adapters
-- **Settings**: Configure cache behavior
+- **Explorer**: Browse and manipulate cached data with tag filtering
+- **Adapter Playground**: Benchmark different adapters and compare batch vs standard operations
+- **Settings**: Configure cache behavior including eviction scheduling options
+- **Sync**: Synchronize between multiple cache instances
 
 To run the example app:
 

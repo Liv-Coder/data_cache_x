@@ -1,10 +1,12 @@
 import 'package:data_cache_x/adapters/cache_adapter.dart';
 import 'package:data_cache_x/analytics/cache_analytics.dart';
 import 'package:data_cache_x/core/exception.dart';
+import 'package:data_cache_x/models/batch_process_data.dart';
 import 'package:data_cache_x/models/cache_item.dart';
 import 'package:data_cache_x/models/cache_policy.dart';
 import 'package:data_cache_x/utils/cache_eviction.dart';
 import 'package:data_cache_x/utils/compression.dart';
+import 'package:data_cache_x/utils/isolate_runner.dart';
 import 'package:data_cache_x/utils/size_estimator.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:logging/logging.dart';
@@ -93,6 +95,9 @@ class DataCacheX {
   /// Gets the most frequently accessed keys.
   List<MapEntry<String, int>> get mostFrequentlyAccessedKeys =>
       _analytics.mostFrequentlyAccessedKeys;
+
+  /// Gets the cache eviction strategy.
+  CacheEviction? get eviction => _eviction;
 
   /// Gets the most recently accessed keys.
   List<MapEntry<String, DateTime>> get mostRecentlyAccessedKeys =>
@@ -697,11 +702,59 @@ class DataCacheX {
     Set<String>? tags,
   }) async {
     try {
+      if (entries.isEmpty) {
+        return;
+      }
+
+      // Check for empty keys
+      for (final entry in entries.entries) {
+        if (entry.key.isEmpty) {
+          throw ArgumentError('Keys cannot be empty');
+        }
+      }
+
       final effectivePolicy = policy ?? CachePolicy.defaultPolicy;
       final effectiveExpiry = expiry ?? effectivePolicy.expiry;
       final effectiveSlidingExpiry =
           slidingExpiry ?? effectivePolicy.slidingExpiry;
 
+      // For large datasets, process in isolate
+      if (entries.length > 50) {
+        _log.fine('Processing ${entries.length} items in isolate');
+
+        // Prepare the batch data
+        final batchData = BatchProcessData<T>(
+          entries: entries,
+          policy: effectivePolicy,
+          expiry: effectiveExpiry,
+          slidingExpiry: effectiveSlidingExpiry,
+          tags: tags,
+        );
+
+        // Process in isolate
+        final cacheItems = await IsolateRunner.run<BatchProcessData<T>,
+            Map<String, CacheItem<dynamic>>>(
+          function: _processBatchData,
+          message: batchData,
+        );
+
+        if (cacheItems.isEmpty) {
+          _log.warning('No items to cache after processing in isolate');
+          return;
+        }
+
+        // Store the processed items
+        await _cacheAdapter.putAll(cacheItems);
+
+        // Check if we need to evict items
+        if (_eviction != null) {
+          await _eviction.checkAndEvict();
+        }
+
+        return;
+      }
+
+      // For smaller datasets, process normally
       final cacheItems = <String, CacheItem<dynamic>>{};
       final now = DateTime.now();
       final expiryTime =
@@ -804,6 +857,86 @@ class DataCacheX {
     }
   }
 
+  /// Processes batch data in an isolate.
+  static Map<String, CacheItem<dynamic>> _processBatchData<T>(
+      BatchProcessData<T> data) {
+    final cacheItems = <String, CacheItem<dynamic>>{};
+    final now = DateTime.now();
+    final expiryTime = data.expiry != null ? now.add(data.expiry!) : null;
+
+    for (final entry in data.entries.entries) {
+      final key = entry.key;
+      final value = entry.value;
+
+      // Initialize compression variables
+      bool isCompressed = false;
+      int? originalSize;
+      double? compressionRatio;
+      dynamic finalValue = value;
+
+      // Check if compression should be applied
+      if (data.policy.compression != CompressionMode.never && value is String) {
+        final compression =
+            Compression(level: data.policy.compressionLevel ?? 6);
+
+        // For auto mode, check if compression is beneficial
+        if (data.policy.compression == CompressionMode.auto) {
+          if (compression.shouldCompress(value)) {
+            // Compress the value
+            originalSize =
+                value.length * 2; // Rough estimate: 2 bytes per character
+            final compressedValue = compression.compressString(value);
+            compressionRatio = originalSize / (compressedValue.length * 2);
+
+            // Only use compression if it actually reduces the size
+            if (compressionRatio > 1.1) {
+              // At least 10% reduction
+              finalValue = compressedValue;
+              isCompressed = true;
+            }
+          }
+        } else if (data.policy.compression == CompressionMode.always) {
+          // Always compress
+          originalSize = value.length * 2;
+          final compressedValue = compression.compressString(value);
+          compressionRatio = originalSize / (compressedValue.length * 2);
+          finalValue = compressedValue;
+          isCompressed = true;
+        }
+      }
+
+      final cacheItem = CacheItem<T>(
+        value: finalValue as T,
+        expiry: expiryTime,
+        slidingExpiry: data.slidingExpiry,
+        priority: data.policy.priority,
+        isCompressed: isCompressed,
+        originalSize: originalSize,
+        compressionRatio: compressionRatio,
+        tags: data.tags,
+      );
+
+      // Check if the item exceeds the maximum size (if specified)
+      if (data.policy.maxSize != null) {
+        // Use a simple size estimation in the isolate
+        final estimatedSize = isCompressed && originalSize != null
+            ? originalSize
+            : value is String
+                ? (value as String).length * 2
+                : 1000; // Default size for non-string values
+
+        if (estimatedSize > data.policy.maxSize!) {
+          // Skip this item but continue with others
+          continue;
+        }
+      }
+
+      cacheItems[key] = cacheItem;
+    }
+
+    return cacheItems;
+  }
+
   /// Retrieves multiple values associated with the given [keys].
   ///
   /// Returns a map where the keys are the original keys and the values are the retrieved values.
@@ -835,7 +968,104 @@ class DataCacheX {
       final keysToDelete = <String>[];
       final effectivePolicy = policy ?? CachePolicy.defaultPolicy;
 
-      // Process cache hits
+      // For large datasets without refresh callbacks, process decompression in isolate
+      if (keys.length > 50 &&
+          (refreshCallbacks == null || refreshCallbacks.isEmpty) &&
+          cacheItems.isNotEmpty) {
+        _log.fine(
+            'Processing ${cacheItems.length} items in isolate for getAll');
+
+        // Create a list of compressed items that need decompression
+        final compressedItems = <String, String>{};
+        for (final entry in cacheItems.entries) {
+          if (entry.value.isCompressed && entry.value.value is String) {
+            compressedItems[entry.key] = entry.value.value as String;
+          }
+        }
+
+        // If there are compressed items, decompress them in an isolate
+        if (compressedItems.isNotEmpty) {
+          final decompressedItems =
+              await IsolateRunner.run<Map<String, String>, Map<String, String>>(
+            function: (items) {
+              final compression = Compression();
+              final results = <String, String>{};
+
+              for (final entry in items.entries) {
+                try {
+                  results[entry.key] =
+                      compression.decompressString(entry.value);
+                } catch (e) {
+                  // If decompression fails, keep the original value
+                  results[entry.key] = entry.value;
+                }
+              }
+
+              return results;
+            },
+            message: compressedItems,
+          );
+
+          // Update the cache items with decompressed values
+          for (final entry in decompressedItems.entries) {
+            final cacheItem = cacheItems[entry.key]!;
+            result[entry.key] = entry.value as T;
+
+            // Update sliding expiry if needed
+            if (cacheItem.slidingExpiry != null) {
+              final updatedCacheItem = cacheItem.updateExpiry();
+              await _cacheAdapter.put(entry.key, updatedCacheItem);
+            } else {
+              // Update access metadata
+              final updatedCacheItem = cacheItem.updateExpiry();
+              if (updatedCacheItem != cacheItem) {
+                await _cacheAdapter.put(entry.key, updatedCacheItem);
+              }
+            }
+
+            // Record cache hit in analytics
+            _analytics.recordHit(entry.key);
+          }
+
+          // Process non-compressed items
+          for (final entry in cacheItems.entries) {
+            if (!entry.value.isCompressed && !result.containsKey(entry.key)) {
+              if (entry.value.isExpired) {
+                // Record cache miss in analytics
+                _analytics.recordMiss(entry.key);
+                keysToDelete.add(entry.key);
+                continue;
+              }
+
+              result[entry.key] = entry.value.value as T;
+
+              // Update sliding expiry if needed
+              if (entry.value.slidingExpiry != null) {
+                final updatedCacheItem = entry.value.updateExpiry();
+                await _cacheAdapter.put(entry.key, updatedCacheItem);
+              } else {
+                // Update access metadata
+                final updatedCacheItem = entry.value.updateExpiry();
+                if (updatedCacheItem != entry.value) {
+                  await _cacheAdapter.put(entry.key, updatedCacheItem);
+                }
+              }
+
+              // Record cache hit in analytics
+              _analytics.recordHit(entry.key);
+            }
+          }
+
+          // Delete expired items in batch
+          if (keysToDelete.isNotEmpty) {
+            await _cacheAdapter.deleteAll(keysToDelete);
+          }
+
+          return result;
+        }
+      }
+
+      // Process cache hits normally for smaller datasets or when refresh callbacks are provided
       for (final entry in cacheItems.entries) {
         final key = entry.key;
         final cacheItem = entry.value;

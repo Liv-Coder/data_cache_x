@@ -10,6 +10,7 @@ class CacheEntry {
   final CachePriority priority;
   final bool isCompressed;
   final bool isEncrypted;
+  final Set<String> tags;
 
   CacheEntry({
     required this.key,
@@ -21,6 +22,7 @@ class CacheEntry {
     required this.priority,
     required this.isCompressed,
     required this.isEncrypted,
+    this.tags = const {},
   });
 
   String get priorityString {

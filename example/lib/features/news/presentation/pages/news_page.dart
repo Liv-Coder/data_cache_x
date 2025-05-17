@@ -142,6 +142,7 @@ class _NewsPageContent extends StatelessWidget {
             ],
           ),
         ),
+        if (state.availableTags.isNotEmpty) _buildTagFilter(context, state),
         Expanded(
           child: state.articles.isEmpty
               ? const Center(
@@ -151,11 +152,73 @@ class _NewsPageContent extends StatelessWidget {
                   padding: const EdgeInsets.all(16),
                   itemCount: state.articles.length,
                   itemBuilder: (context, index) {
-                    return ArticleCard(article: state.articles[index]);
+                    return ArticleCard(
+                      article: state.articles[index],
+                      onTagTap: (tag) =>
+                          context.read<NewsBloc>().add(FilterByTagEvent(tag)),
+                    );
                   },
                 ),
         ),
       ],
+    );
+  }
+
+  Widget _buildTagFilter(BuildContext context, NewsLoaded state) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Filter by Tag:',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(width: 8),
+              if (state.activeTagFilter != null)
+                Chip(
+                  label: Text('#${state.activeTagFilter}'),
+                  deleteIcon: const Icon(Ionicons.close_outline, size: 16),
+                  onDeleted: () =>
+                      context.read<NewsBloc>().add(ClearTagFilterEvent()),
+                ),
+            ],
+          ),
+          if (state.activeTagFilter == null) ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              height: 32,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: state.availableTags.map((tag) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ActionChip(
+                      label: Text('#$tag'),
+                      onPressed: () =>
+                          context.read<NewsBloc>().add(FilterByTagEvent(tag)),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 
@@ -181,11 +244,20 @@ class _NewsPageContent extends StatelessWidget {
               Text('• Business: Critical policy (30 min expiry, compression)'),
               SizedBox(height: 16),
               Text(
+                'Features demonstrated:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Text('• Different caching policies for different content types'),
+              Text('• Tag-based organization and filtering'),
+              Text('• Cross-category content discovery through tags'),
+              SizedBox(height: 16),
+              Text(
                 'The first load fetches data from the "API" (simulated), while subsequent loads within the cache lifetime will be instant.',
               ),
               SizedBox(height: 8),
               Text(
-                'Try switching between categories and observe the loading behavior. Use the trash icon to clear the cache.',
+                'Try switching between categories and observe the loading behavior. Use tags to filter articles across categories. Use the trash icon to clear the cache.',
               ),
             ],
           ),

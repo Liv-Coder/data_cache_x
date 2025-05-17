@@ -96,14 +96,18 @@ class BenchmarkResult {
   }
 
   /// Gets the formatted write operations per second
-  String get formattedWriteOpsPerSecond => '${writeOpsPerSecond.toStringAsFixed(1)}/s';
+  String get formattedWriteOpsPerSecond =>
+      '${writeOpsPerSecond.toStringAsFixed(1)}/s';
 
   /// Gets the formatted read operations per second
-  String get formattedReadOpsPerSecond => '${readOpsPerSecond.toStringAsFixed(1)}/s';
+  String get formattedReadOpsPerSecond =>
+      '${readOpsPerSecond.toStringAsFixed(1)}/s';
 
   /// Gets the formatted delete operations per second
-  String get formattedDeleteOpsPerSecond => '${deleteOpsPerSecond.toStringAsFixed(1)}/s';
+  String get formattedDeleteOpsPerSecond =>
+      '${deleteOpsPerSecond.toStringAsFixed(1)}/s';
 
   /// Gets the formatted average operations per second
-  String get formattedAverageOpsPerSecond => '${averageOpsPerSecond.toStringAsFixed(1)}/s';
+  String get formattedAverageOpsPerSecond =>
+      '${averageOpsPerSecond.toStringAsFixed(1)}/s';
 }

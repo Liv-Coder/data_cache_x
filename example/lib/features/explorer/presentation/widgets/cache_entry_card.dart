@@ -8,12 +8,14 @@ class CacheEntryCard extends StatelessWidget {
   final CacheEntry entry;
   final VoidCallback onTap;
   final VoidCallback onDelete;
+  final Function(String)? onTagTap;
 
   const CacheEntryCard({
     super.key,
     required this.entry,
     required this.onTap,
     required this.onDelete,
+    this.onTagTap,
   });
 
   @override
@@ -98,6 +100,22 @@ class CacheEntryCard extends StatelessWidget {
                     ),
                 ],
               ),
+              if (entry.tags.isNotEmpty) const SizedBox(height: 8),
+              if (entry.tags.isNotEmpty)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: entry.tags
+                      .map(
+                        (tag) => _buildTag(
+                          context,
+                          '#$tag',
+                          Colors.teal,
+                          onTap: onTagTap != null ? () => onTagTap!(tag) : null,
+                        ),
+                      )
+                      .toList(),
+                ),
             ],
           ),
         ),
@@ -136,8 +154,9 @@ class CacheEntryCard extends StatelessWidget {
     );
   }
 
-  Widget _buildTag(BuildContext context, String text, Color color) {
-    return Container(
+  Widget _buildTag(BuildContext context, String text, Color color,
+      {VoidCallback? onTap}) {
+    final tag = Container(
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
@@ -155,6 +174,16 @@ class CacheEntryCard extends StatelessWidget {
             ),
       ),
     );
+
+    if (onTap != null) {
+      return InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: tag,
+      );
+    }
+
+    return tag;
   }
 
   String _formatDate(DateTime date) {

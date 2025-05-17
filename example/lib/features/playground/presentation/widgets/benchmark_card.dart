@@ -34,7 +34,7 @@ class BenchmarkCard extends StatelessWidget {
   Widget _buildHeader(BuildContext context) {
     Color color;
     IconData icon;
-    
+
     switch (result.adapterName) {
       case 'memory':
         color = Colors.blue;
@@ -56,7 +56,7 @@ class BenchmarkCard extends StatelessWidget {
         color = Colors.grey;
         icon = Ionicons.cube_outline;
     }
-    
+
     return Row(
       children: [
         Container(

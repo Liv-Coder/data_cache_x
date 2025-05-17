@@ -84,24 +84,64 @@ class NewsRepository {
     // Simulate network delay
     await Future.delayed(const Duration(seconds: 2));
 
+    // Define possible tags for articles
+    final possibleTags = [
+      'politics',
+      'technology',
+      'science',
+      'health',
+      'business',
+      'entertainment',
+      'sports',
+      'world',
+      'environment',
+      'education',
+      'finance',
+      'ai',
+      'mobile',
+      'security',
+      'startups',
+      'innovation'
+    ];
+
     // Generate fake articles
     final faker = Faker();
     final articles = List.generate(
       20,
-      (index) => Article(
-        id: faker.guid.guid(),
-        title: faker.lorem.sentence(),
-        description: faker.lorem.sentences(2).join(' '),
-        content: faker.lorem.sentences(5).join(' '),
-        author: faker.person.name(),
-        publishedAt: DateTime.now()
-            .subtract(Duration(hours: faker.randomGenerator.integer(48)))
-            .toIso8601String(),
-        url: 'https://example.com/article/${faker.guid.guid()}',
-        imageUrl:
-            'https://picsum.photos/seed/${faker.randomGenerator.integer(1000)}/800/600',
-        source: faker.company.name(),
-      ),
+      (index) {
+        // Generate 1-3 random tags for each article
+        final articleTags = <String>{};
+        final tagCount = faker.randomGenerator.integer(3) + 1; // 1 to 3 tags
+        for (int t = 0; t < tagCount; t++) {
+          articleTags.add(
+              possibleTags[faker.randomGenerator.integer(possibleTags.length)]);
+        }
+
+        // Add category-specific tags
+        if (index % 3 == 0) {
+          articleTags.add('headlines');
+        } else if (index % 3 == 1) {
+          articleTags.add('technology');
+        } else {
+          articleTags.add('business');
+        }
+
+        return Article(
+          id: faker.guid.guid(),
+          title: faker.lorem.sentence(),
+          description: faker.lorem.sentences(2).join(' '),
+          content: faker.lorem.sentences(5).join(' '),
+          author: faker.person.name(),
+          publishedAt: DateTime.now()
+              .subtract(Duration(hours: faker.randomGenerator.integer(48)))
+              .toIso8601String(),
+          url: 'https://example.com/article/${faker.guid.guid()}',
+          imageUrl:
+              'https://picsum.photos/seed/${faker.randomGenerator.integer(1000)}/800/600',
+          source: faker.company.name(),
+          tags: articleTags,
+        );
+      },
     );
 
     return articles;
@@ -112,5 +152,39 @@ class NewsRepository {
     await _cache.delete(_headlinesKey);
     await _cache.delete(_techNewsKey);
     await _cache.delete(_businessNewsKey);
+  }
+
+  /// Gets all available tags from all articles
+  Future<Set<String>> getAllTags() async {
+    final allTags = <String>{};
+
+    // Get articles from all categories
+    final headlines = await getHeadlines();
+    final techNews = await getTechNews();
+    final businessNews = await getBusinessNews();
+
+    // Combine all articles
+    final allArticles = [...headlines, ...techNews, ...businessNews];
+
+    // Extract tags
+    for (final article in allArticles) {
+      allTags.addAll(article.tags);
+    }
+
+    return allTags;
+  }
+
+  /// Gets articles by tag
+  Future<List<Article>> getArticlesByTag(String tag) async {
+    // Get articles from all categories
+    final headlines = await getHeadlines();
+    final techNews = await getTechNews();
+    final businessNews = await getBusinessNews();
+
+    // Combine all articles
+    final allArticles = [...headlines, ...techNews, ...businessNews];
+
+    // Filter by tag
+    return allArticles.where((article) => article.tags.contains(tag)).toList();
   }
 }

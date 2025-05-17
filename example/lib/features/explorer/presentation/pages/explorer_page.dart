@@ -83,6 +83,8 @@ class _ExplorerPageContent extends StatelessWidget {
     return Column(
       children: [
         _buildStatsSection(context, state),
+        if (state.availableTags.isNotEmpty)
+          _buildTagFilterSection(context, state),
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
@@ -95,11 +97,80 @@ class _ExplorerPageContent extends StatelessWidget {
                     .read<ExplorerBloc>()
                     .add(GetEntryValueEvent(entry.key)),
                 onDelete: () => _confirmDeleteEntry(context, entry.key),
+                onTagTap: (tag) =>
+                    context.read<ExplorerBloc>().add(FilterByTagEvent(tag)),
               );
             },
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildTagFilterSection(BuildContext context, EntriesLoaded state) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(8),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Filter by Tag:',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const SizedBox(width: 8),
+              if (state.activeTagFilter != null)
+                Chip(
+                  label: Text('#${state.activeTagFilter}'),
+                  deleteIcon: const Icon(Ionicons.close_outline, size: 16),
+                  onDeleted: () =>
+                      context.read<ExplorerBloc>().add(ClearTagFilterEvent()),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (state.activeTagFilter == null)
+            Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: state.availableTags.map((tag) {
+                return ActionChip(
+                  label: Text('#$tag'),
+                  onPressed: () =>
+                      context.read<ExplorerBloc>().add(FilterByTagEvent(tag)),
+                );
+              }).toList(),
+            ),
+          if (state.activeTagFilter != null)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton.icon(
+                  icon: const Icon(Ionicons.trash_outline, size: 16),
+                  label: const Text('Delete All Items with This Tag'),
+                  onPressed: () =>
+                      _confirmDeleteByTag(context, state.activeTagFilter!),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
     );
   }
 
@@ -167,6 +238,20 @@ class _ExplorerPageContent extends StatelessWidget {
                   color: Colors.green,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: StatsCard(
+                  title: 'Tags',
+                  value: '${state.stats['tagCount']}',
+                  icon: Ionicons.pricetags_outline,
+                  color: Colors.teal,
+                ),
+              ),
+              const Expanded(child: SizedBox()),
             ],
           ),
         ],
@@ -287,6 +372,30 @@ class _ExplorerPageContent extends StatelessWidget {
     );
   }
 
+  void _confirmDeleteByTag(BuildContext context, String tag) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Entries by Tag'),
+        content: Text(
+            'Are you sure you want to delete all entries with the tag "#$tag"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              context.read<ExplorerBloc>().add(DeleteByTagEvent(tag));
+              Navigator.of(context).pop();
+            },
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showInfoDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -307,10 +416,13 @@ class _ExplorerPageContent extends StatelessWidget {
               Text('• Browse cached items'),
               Text('• View item details (expiry, size, etc.)'),
               Text('• View cache entry values'),
+              Text('• Filter items by tags'),
               Text('• Delete individual items'),
+              Text('• Delete items by tag'),
               Text('• Clear all cache entries'),
               SizedBox(height: 16),
               Text('Tap on an entry to view its value.'),
+              Text('Tap on a tag to filter items with that tag.'),
             ],
           ),
         ),

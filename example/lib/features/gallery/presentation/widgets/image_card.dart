@@ -8,12 +8,18 @@ class ImageCard extends StatelessWidget {
   final GalleryImage image;
   final VoidCallback onFavoriteToggle;
   final VoidCallback onDelete;
+  final Function(String)? onTagTap;
+  final Function(String)? onAddTag;
+  final Function(String)? onRemoveTag;
 
   const ImageCard({
     super.key,
     required this.image,
     required this.onFavoriteToggle,
     required this.onDelete,
+    this.onTagTap,
+    this.onAddTag,
+    this.onRemoveTag,
   });
 
   @override
@@ -127,22 +133,106 @@ class ImageCard extends StatelessWidget {
                           '${image.width}x${image.height}',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
-                        IconButton(
-                          icon: const Icon(
-                            Ionicons.trash_outline,
-                            size: 16,
-                          ),
-                          onPressed: onDelete,
-                          tooltip: 'Delete',
-                          constraints: const BoxConstraints(
-                            minWidth: 32,
-                            minHeight: 32,
-                          ),
-                          padding: const EdgeInsets.all(4),
-                          iconSize: 16,
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(
+                                Ionicons.pricetag_outline,
+                                size: 16,
+                              ),
+                              onPressed: () => _showTagDialog(context),
+                              tooltip: 'Manage Tags',
+                              constraints: const BoxConstraints(
+                                minWidth: 32,
+                                minHeight: 32,
+                              ),
+                              padding: const EdgeInsets.all(4),
+                              iconSize: 16,
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Ionicons.trash_outline,
+                                size: 16,
+                              ),
+                              onPressed: onDelete,
+                              tooltip: 'Delete',
+                              constraints: const BoxConstraints(
+                                minWidth: 32,
+                                minHeight: 32,
+                              ),
+                              padding: const EdgeInsets.all(4),
+                              iconSize: 16,
+                            ),
+                          ],
                         ),
                       ],
                     ),
+                    if (image.tags.isNotEmpty) const SizedBox(height: 4),
+                    if (image.tags.isNotEmpty)
+                      SizedBox(
+                        height: 24,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: image.tags.map((tag) {
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 4),
+                              child: InkWell(
+                                onTap: onTagTap != null
+                                    ? () => onTagTap!(tag)
+                                    : null,
+                                borderRadius: BorderRadius.circular(12),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .primary
+                                        .withAlpha(30),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        '#$tag',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                      ),
+                                      if (onRemoveTag != null)
+                                        InkWell(
+                                          onTap: () => onRemoveTag!(tag),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          child: Padding(
+                                            padding:
+                                                const EdgeInsets.only(left: 2),
+                                            child: Icon(
+                                              Ionicons.close_outline,
+                                              size: 12,
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .primary,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -165,5 +255,76 @@ class ImageCard extends StatelessWidget {
     } else {
       return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
     }
+  }
+
+  void _showTagDialog(BuildContext context) {
+    final TextEditingController tagController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Manage Tags'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (image.tags.isNotEmpty) ...[
+              const Text('Current Tags:'),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: image.tags.map((tag) {
+                  return Chip(
+                    label: Text('#$tag'),
+                    deleteIcon: const Icon(Ionicons.close_outline, size: 16),
+                    onDeleted: onRemoveTag != null
+                        ? () {
+                            onRemoveTag!(tag);
+                            Navigator.of(context).pop();
+                          }
+                        : null,
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+            ],
+            const Text('Add New Tag:'),
+            const SizedBox(height: 8),
+            TextField(
+              controller: tagController,
+              decoration: const InputDecoration(
+                hintText: 'Enter tag name',
+                prefixIcon: Icon(Ionicons.pricetag_outline),
+                border: OutlineInputBorder(),
+              ),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (value) {
+                if (value.isNotEmpty && onAddTag != null) {
+                  onAddTag!(value.trim().toLowerCase());
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              final tag = tagController.text.trim().toLowerCase();
+              if (tag.isNotEmpty && onAddTag != null) {
+                onAddTag!(tag);
+                Navigator.of(context).pop();
+              }
+            },
+            child: const Text('Add Tag'),
+          ),
+        ],
+      ),
+    );
   }
 }

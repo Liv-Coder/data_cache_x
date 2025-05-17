@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:typed_data';
-import 'dart:isolate';
 import 'package:archive/archive.dart';
 import 'package:logging/logging.dart';
+import 'package:data_cache_x/utils/isolate_runner.dart';
 
 /// A class that provides compression and decompression functionality.
 class Compression {
@@ -62,27 +62,15 @@ class Compression {
   /// to avoid blocking the main thread.
   Future<String> compressStringAsync(String data) async {
     try {
-      // For small strings, compress synchronously
-      if (data.length < _asyncThreshold) {
-        return _compressStringSync(data);
-      }
-
-      // For large strings, compress in a separate isolate
-      _log.fine('Compressing large string (${data.length} chars) in isolate');
-
-      // Create a message to send to the isolate
-      final message = _CompressionMessage(
-        data: data,
-        level: _level,
+      return await IsolateRunner.runWithThreshold<_CompressionMessage, String>(
+        function: _compressInIsolate,
+        message: _CompressionMessage(
+          data: data,
+          level: _level,
+        ),
+        dataSize: data.length,
+        asyncThreshold: _asyncThreshold,
       );
-
-      // Compress in isolate
-      final result = await Isolate.run(() => _compressInIsolate(message));
-
-      _log.fine(
-          'Compressed string from ${data.length} to ${result.length} characters in isolate');
-
-      return result;
     } catch (e) {
       _log.warning('Failed to compress string asynchronously: $e');
       // Return the original data if compression fails
@@ -139,27 +127,15 @@ class Compression {
   /// to avoid blocking the main thread.
   Future<String> decompressStringAsync(String compressedData) async {
     try {
-      // For small strings, decompress synchronously
-      if (compressedData.length < _asyncThreshold) {
-        return decompressString(compressedData);
-      }
-
-      // For large strings, decompress in a separate isolate
-      _log.fine(
-          'Decompressing large string (${compressedData.length} chars) in isolate');
-
-      // Create a message to send to the isolate
-      final message = _DecompressionMessage(
-        compressedString: compressedData,
+      return await IsolateRunner.runWithThreshold<_DecompressionMessage,
+          String>(
+        function: _decompressInIsolate,
+        message: _DecompressionMessage(
+          compressedString: compressedData,
+        ),
+        dataSize: compressedData.length,
+        asyncThreshold: _asyncThreshold,
       );
-
-      // Decompress in isolate
-      final result = await Isolate.run(() => _decompressInIsolate(message));
-
-      _log.fine(
-          'Decompressed string from ${compressedData.length} to ${result.length} characters in isolate');
-
-      return result;
     } catch (e) {
       _log.warning('Failed to decompress string asynchronously: $e');
       // Return the original data if decompression fails
