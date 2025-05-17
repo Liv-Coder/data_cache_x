@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 (Unreleased)
+## 1.0.0
 
 - Implemented comprehensive tag-based cache management system
   - Added support for tagging cache items with multiple labels

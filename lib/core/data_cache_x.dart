@@ -876,8 +876,9 @@ class DataCacheX {
 
       // Check if compression should be applied
       if (data.policy.compression != CompressionMode.never && value is String) {
-        final compression =
-            Compression(level: data.policy.compressionLevel ?? 6);
+        int compressionLevel = 6;
+        compressionLevel = data.policy.compressionLevel;
+        final compression = Compression(level: compressionLevel);
 
         // For auto mode, check if compression is beneficial
         if (data.policy.compression == CompressionMode.auto) {

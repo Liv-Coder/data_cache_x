@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:data_cache_x/core/data_cache_x.dart';
 import 'package:data_cache_x/utils/cache_eviction.dart';
 import 'package:logging/logging.dart';
 
@@ -31,8 +30,8 @@ class EvictionScheduler {
   /// The logger instance.
   final _log = Logger('EvictionScheduler');
 
-  /// The cache instance.
-  final DataCacheX _cache;
+  // The cache instance is not directly used but is kept for reference
+  // and potential future use.
 
   /// The eviction instance.
   final CacheEviction? _eviction;
@@ -74,7 +73,7 @@ class EvictionScheduler {
   final Duration _jitter = Duration(minutes: 2);
 
   /// Creates a new instance of [EvictionScheduler].
-  EvictionScheduler(this._cache) : _eviction = _cache.eviction;
+  EvictionScheduler(dynamic cache) : _eviction = cache.eviction;
 
   /// Gets whether the scheduler is running.
   bool get isRunning => _isRunning;
@@ -111,7 +110,8 @@ class EvictionScheduler {
     _conditions.add(EvictionTiming.periodic);
     _periodicTimer = Timer.periodic(frequency, (_) => _checkAndEvict());
     _isRunning = true;
-    _log.info('Scheduled periodic eviction every ${frequency.inMinutes} minutes');
+    _log.info(
+        'Scheduled periodic eviction every ${frequency.inMinutes} minutes');
   }
 
   /// Schedules eviction to run at specific times of day.
@@ -133,7 +133,8 @@ class EvictionScheduler {
     _conditions.add(EvictionTiming.scheduled);
     _scheduleNextEviction();
     _isRunning = true;
-    _log.info('Scheduled eviction at specific times: ${times.map((t) => '${t.hour}:${t.minute}').join(', ')}');
+    _log.info(
+        'Scheduled eviction at specific times: ${times.map((t) => '${t.hour}:${t.minute}').join(', ')}');
   }
 
   /// Schedules eviction to run when the app is idle.
@@ -269,7 +270,7 @@ class EvictionScheduler {
 
     final now = DateTime.now();
     final currentTimeOfDay = TimeOfDay(hour: now.hour, minute: now.minute);
-    
+
     // Find the next scheduled time
     TimeOfDay? nextTime;
     for (final time in _scheduledTimes) {
@@ -279,29 +280,28 @@ class EvictionScheduler {
         }
       }
     }
-    
+
     // If no time is found for today, use the first time for tomorrow
-    if (nextTime == null) {
-      nextTime = _scheduledTimes.reduce((a, b) => _isTimeBefore(a, b) ? a : b);
-    }
-    
+    nextTime ??= _scheduledTimes.reduce((a, b) => _isTimeBefore(a, b) ? a : b);
+
     // Calculate the delay until the next scheduled time
     final nextDateTime = _timeOfDayToDateTime(nextTime, now);
     final delay = nextDateTime.difference(now);
-    
+
     // Add some jitter to avoid thundering herd
     final random = Random();
     final jitterMillis = random.nextInt(_jitter.inMilliseconds);
     final jitteredDelay = delay + Duration(milliseconds: jitterMillis);
-    
+
     // Schedule the next eviction
     _scheduledTimer?.cancel();
     _scheduledTimer = Timer(jitteredDelay, () {
       _checkAndEvict();
       _scheduleNextEviction(); // Schedule the next one
     });
-    
-    _log.fine('Next eviction scheduled at ${nextTime.hour}:${nextTime.minute} (in ${jitteredDelay.inMinutes} minutes)');
+
+    _log.fine(
+        'Next eviction scheduled at ${nextTime.hour}:${nextTime.minute} (in ${jitteredDelay.inMinutes} minutes)');
   }
 
   /// Converts a [TimeOfDay] to a [DateTime] on the given day.
@@ -355,8 +355,8 @@ class TimeOfDay {
   TimeOfDay({
     required this.hour,
     required this.minute,
-  }) : assert(hour >= 0 && hour < 24),
-       assert(minute >= 0 && minute < 60);
+  })  : assert(hour >= 0 && hour < 24),
+        assert(minute >= 0 && minute < 60);
 
   @override
   String toString() => '$hour:${minute.toString().padLeft(2, '0')}';
